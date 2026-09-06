@@ -1,0 +1,8 @@
+{
+  "name": "نوش",
+  "description": "نوشیدن آب، یادآوری عشق به خودت - پیگیری و یادآور روزانه نوشیدن آب برای سبک زندگی سالم‌تر",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

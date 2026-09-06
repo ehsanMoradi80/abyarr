@@ -1,0 +1,74 @@
+{
+  "expo": {
+    "name": "آب‌یار | Abyar Water Tracker",
+    "slug": "ehsan-moradi",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./public/favicon.ico",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "backgroundColor": "#168C9B",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.abyar.water"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#168C9B"
+      },
+      "package": "com.abyar.water",
+      "permissions": [
+        "SCHEDULE_EXACT_ALARM",
+        "USE_EXACT_ALARM",
+        "RECEIVE_BOOT_COMPLETED",
+        "POST_NOTIFICATIONS",
+        "WAKE_LOCK",
+        "VIBRATE"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          },
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "minSdkVersion": 24,
+            "buildToolsVersion": "35.0.0",
+            "kotlinVersion": "2.0.21",
+            "extraGradleProperties": [
+              {
+                "propertyName": "android.useAndroidX",
+                "propertyValue": "true"
+              },
+              {
+                "propertyName": "android.enableJetifier",
+                "propertyValue": "true"
+              }
+            ]
+          }
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./public/favicon.ico",
+          "color": "#168C9B",
+          "sounds": [
+            "./assets/sounds/alarm.wav"
+          ]
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "448d9cd9-a38c-4c95-9852-d62b9b1a04df"
+      }
+    }
+  }
+}

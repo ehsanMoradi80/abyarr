@@ -1,0 +1,1 @@
+- [Supabase connector security](supabase-public-connector.md) — public-key connector requires locked tables and session-validated RPCs for backend persistence.
