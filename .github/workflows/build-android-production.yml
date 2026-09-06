@@ -1,4 +1,4 @@
-name: Build Android Preview
+name: Build Android Production
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Build Android Preview
+    name: Build Android Production
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -36,9 +36,9 @@ jobs:
           cd artifacts/abyar
           pnpm install --frozen-lockfile
 
-      - name: Build Android Preview
+      - name: Build Android Production
         run: |
           cd artifacts/abyar
-          eas build --platform android --profile preview --non-interactive --wait
+          eas build --platform android --profile production --non-interactive --wait
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
