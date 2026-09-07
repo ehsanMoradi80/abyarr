@@ -20,6 +20,23 @@
     "production": {
       "android": {
         "buildType": "app-bundle"
+      },
+      "env": {
+        "NODE_ENV": "production",
+        "SUPABASE_URL": "${{ secrets.SUPABASE_URL }}",
+        "SUPABASE_ANON_KEY": "${{ secrets.SUPABASE_ANON_KEY }}",
+        "SUPABASE_SERVICE_ROLE_KEY": "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}",
+        "VITE_SUPABASE_URL": "${{ secrets.SUPABASE_URL }}",
+        "VITE_SUPABASE_ANON_KEY": "${{ secrets.SUPABASE_ANON_KEY }}",
+        "SESSION_SECRET": "${{ secrets.SESSION_SECRET }}",
+        "JWT_SECRET": "${{ secrets.JWT_SECRET }}",
+        "VITE_CLERK_PUBLISHABLE_KEY": "${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}",
+        "CLERK_SECRET_KEY": "${{ secrets.CLERK_SECRET_KEY }}",
+        "VAPID_PUBLIC_KEY": "${{ secrets.VAPID_PUBLIC_KEY }}",
+        "VAPID_PRIVATE_KEY": "${{ secrets.VAPID_PRIVATE_KEY }}",
+        "VAPID_SUBJECT": "${{ secrets.VAPID_SUBJECT }}",
+        "APP_URL": "${{ secrets.APP_URL }}",
+        "CORS_ORIGIN": "${{ secrets.CORS_ORIGIN }}"
       }
     }
   },
