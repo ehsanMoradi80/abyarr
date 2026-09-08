@@ -12,11 +12,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          submodules: false
-          sparse-checkout: |
-            artifacts/abyar
-          sparse-checkout-cone-mode: false
 
       - name: Setup Node
         uses: actions/setup-node@v4
