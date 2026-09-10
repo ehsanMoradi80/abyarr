@@ -32,30 +32,30 @@ jobs:
           expo-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
+      - name: Verify pnpm config
+        working-directory: artifacts/abyar
+        env:
+          PNPM_CONFIG_AUTO_INSTALL_PEERS: 'true'
+        run: |
+          echo "pnpm version:"
+          pnpm --version
+
+          echo "autoInstallPeers:"
+          pnpm config get autoInstallPeers
+
+          echo "project config:"
+          pnpm config list --location project
+
       - name: Install dependencies
         working-directory: artifacts/abyar
+        env:
+          PNPM_CONFIG_AUTO_INSTALL_PEERS: 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Verify Expo plugin
         working-directory: artifacts/abyar
         run: |
-          echo "Node:"
-          node --version
-
-          echo "pnpm:"
-          pnpm --version
-
-          echo "Current directory:"
-          pwd
-
-          echo "Package:"
-          node -p "require('./package.json').name"
-
-          echo "expo-build-properties:"
           node -p "require.resolve('expo-build-properties')"
-
-          echo "Expo config:"
-          npx expo config --type public
 
       - name: Build Android Production
         working-directory: artifacts/abyar
