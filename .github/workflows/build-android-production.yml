@@ -1,3 +1,4 @@
+```yaml
 name: Build Android Production
 
 on:
@@ -9,21 +10,23 @@ jobs:
   build:
     name: Build Android Production
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+          run_install: false
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: 'pnpm'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 'latest'
-          run_install: false
+          cache-dependency-path: 'artifacts/abyar/pnpm-lock.yaml'
 
       - name: Setup Expo
         uses: expo/expo-github-action@v8
@@ -33,13 +36,12 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Install dependencies
-        run: |
-          cd artifacts/abyar
-          pnpm install --frozen-lockfile
+        working-directory: artifacts/abyar
+        run: pnpm install --frozen-lockfile
 
       - name: Build Android Production
-        run: |
-          cd artifacts/abyar
-          eas build --platform android --profile production --non-interactive --wait
+        working-directory: artifacts/abyar
+        run: eas build --platform android --profile production --non-interactive --wait
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+```
