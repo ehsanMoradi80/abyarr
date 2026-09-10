@@ -28,9 +28,34 @@ jobs:
       - name: Setup Expo
         uses: expo/expo-github-action@v8
         with:
-          expo-version: latest
           eas-version: latest
+          expo-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        working-directory: artifacts/abyar
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify Expo plugin
+        working-directory: artifacts/abyar
+        run: |
+          echo "Node:"
+          node --version
+
+          echo "pnpm:"
+          pnpm --version
+
+          echo "Current directory:"
+          pwd
+
+          echo "Package:"
+          node -p "require('./package.json').name"
+
+          echo "expo-build-properties:"
+          node -p "require.resolve('expo-build-properties')"
+
+          echo "Expo config:"
+          npx expo config --type public
 
       - name: Build Android Production
         working-directory: artifacts/abyar
