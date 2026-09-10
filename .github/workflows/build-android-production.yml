@@ -1,4 +1,3 @@
-```yaml
 name: Build Android Production
 
 on:
@@ -44,4 +43,3 @@ jobs:
         run: eas build --platform android --profile production --non-interactive --wait
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-```
