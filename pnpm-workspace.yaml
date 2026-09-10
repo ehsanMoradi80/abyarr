@@ -1,6 +1,9 @@
 packages:
   - 'artifacts/*'
   - 'lib/*'
+allowBuilds:
+  '@clerk/shared': true
+  esbuild: true
 catalog:
   react: '^18.3.1'
   react-dom: '^18.3.1'
