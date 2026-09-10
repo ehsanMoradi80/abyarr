@@ -17,15 +17,38 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: latest
+          version: 12
           run_install: false
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: 'pnpm'
-          cache-dependency-path: 'artifacts/abyar/pnpm-lock.yaml'
+
+      - name: Check project files
+        run: |
+          echo "PWD:"
+          pwd
+
+          echo ""
+          echo "Repository:"
+          ls -la
+
+          echo ""
+          echo "artifacts:"
+          ls -la artifacts || true
+
+          echo ""
+          echo "abyar:"
+          ls -la artifacts/abyar || true
+
+          echo ""
+          echo "Git submodule status:"
+          git submodule status || true
+
+          echo ""
+          echo ".gitmodules:"
+          cat .gitmodules 2>/dev/null || echo ".gitmodules does not exist"
 
       - name: Setup Expo
         uses: expo/expo-github-action@v8
