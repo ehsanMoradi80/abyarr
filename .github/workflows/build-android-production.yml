@@ -34,9 +34,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: artifacts/abyar
-        run: |
-          pnpm config set auto-install-peers true
-          pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build Android Production
         working-directory: artifacts/abyar
