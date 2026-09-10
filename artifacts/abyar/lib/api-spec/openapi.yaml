@@ -1,0 +1,439 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: sync
+    description: Local-first cloud synchronization
+  - name: partner
+    description: Companion connection and sharing
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /auth/otp/request:
+    post:
+      operationId: requestOtp
+      tags: [auth]
+      summary: Request a phone verification code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OtpRequest"
+      responses:
+        "200":
+          description: Code request accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OtpRequestResponse"
+        "400":
+          description: Invalid phone number
+  /auth/otp/verify:
+    post:
+      operationId: verifyOtp
+      tags: [auth]
+      summary: Verify a phone verification code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OtpVerifyRequest"
+      responses:
+        "200":
+          description: Authenticated session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
+        "401":
+          description: Invalid verification code
+  /auth/user:
+    get:
+      operationId: getCurrentAuthUser
+      tags: [auth]
+      summary: Get the current authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Not authenticated
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Revoke the current session
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Session revoked
+  /sync:
+    get:
+      operationId: pullSync
+      tags: [sync]
+      summary: Pull the authenticated user's cloud data
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Cloud state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncState"
+    post:
+      operationId: pushSync
+      tags: [sync]
+      summary: Push local-first state to the cloud
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncState"
+      responses:
+        "200":
+          description: Cloud state saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncState"
+  /partner:
+    get:
+      operationId: getPartner
+      tags: [partner]
+      summary: Get the current companion relationship
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current companion relationship
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerConnection"
+        "404":
+          description: No companion relationship
+    delete:
+      operationId: revokePartner
+      tags: [partner]
+      summary: Revoke or leave the current companion relationship
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Relationship revoked
+  /partner/invite:
+    post:
+      operationId: createPartnerInvite
+      tags: [partner]
+      summary: Create a companion invitation code
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Invitation code created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerConnection"
+  /partner/connect:
+    post:
+      operationId: connectPartner
+      tags: [partner]
+      summary: Accept a companion invitation code
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartnerConnectRequest"
+      responses:
+        "200":
+          description: Companion connected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerConnection"
+        "400":
+          description: Invalid or expired invitation
+  /partner/sharing:
+    patch:
+      operationId: updatePartnerSharing
+      tags: [partner]
+      summary: Update companion sharing permissions
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartnerSharingUpdate"
+      responses:
+        "200":
+          description: Sharing permissions updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerConnection"
+        "403":
+          description: Only the relationship owner can update sharing
+  /partner/shared:
+    get:
+      operationId: getPartnerSharedData
+      tags: [partner]
+      summary: Get the companion data allowed by sharing permissions
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Shared companion data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerSharedData"
+        "404":
+          description: No active companion relationship
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    OtpRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+      required:
+        - phone
+    OtpRequestResponse:
+      type: object
+      properties:
+        accepted:
+          type: boolean
+        devMode:
+          type: boolean
+      required:
+        - accepted
+    OtpVerifyRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+        code:
+          type: string
+      required:
+        - phone
+        - code
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: string
+        phone:
+          type: string
+        name:
+          type: [string, "null"]
+      required:
+        - id
+        - phone
+    AuthSession:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/AuthUser"
+      required:
+        - token
+        - user
+    WaterLog:
+      type: object
+      properties:
+        id:
+          type: string
+        amountMl:
+          type: number
+        loggedAt:
+          type: string
+      required:
+        - id
+        - amountMl
+        - loggedAt
+    ReminderSettings:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        startTime:
+          type: string
+        endTime:
+          type: string
+        intervalMinutes:
+          type: number
+        quietHoursEnabled:
+          type: boolean
+        quietHoursStart:
+          type: string
+        quietHoursEnd:
+          type: string
+      required:
+        - enabled
+        - startTime
+        - endTime
+        - intervalMinutes
+        - quietHoursEnabled
+        - quietHoursStart
+        - quietHoursEnd
+    SyncState:
+      type: object
+      properties:
+        profile:
+          type: object
+          properties:
+            name:
+              type: string
+            dailyGoalMl:
+              type: number
+          required:
+            - name
+            - dailyGoalMl
+        reminder:
+          $ref: "#/components/schemas/ReminderSettings"
+        logs:
+          type: array
+          items:
+            $ref: "#/components/schemas/WaterLog"
+      required:
+        - profile
+        - reminder
+        - logs
+    PartnerConnectRequest:
+      type: object
+      properties:
+        inviteCode:
+          type: string
+      required:
+        - inviteCode
+    PartnerSharingUpdate:
+      type: object
+      properties:
+        shareProgress:
+          type: boolean
+        shareLastDrink:
+          type: boolean
+        shareHistory:
+          type: boolean
+      required:
+        - shareProgress
+        - shareLastDrink
+        - shareHistory
+    PartnerConnection:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [pending, active]
+        role:
+          type: string
+          enum: [owner, partner]
+        partnerName:
+          type: [string, "null"]
+        inviteCode:
+          type: [string, "null"]
+        canManageSharing:
+          type: boolean
+        shareProgress:
+          type: boolean
+        shareLastDrink:
+          type: boolean
+        shareHistory:
+          type: boolean
+      required:
+        - id
+        - status
+        - role
+        - canManageSharing
+        - shareProgress
+        - shareLastDrink
+        - shareHistory
+    PartnerSharedData:
+      type: object
+      properties:
+        partnerName:
+          type: [string, "null"]
+        progress:
+          oneOf:
+            - $ref: "#/components/schemas/PartnerProgress"
+            - type: "null"
+        lastDrink:
+          oneOf:
+            - $ref: "#/components/schemas/WaterLog"
+            - type: "null"
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/WaterLog"
+      required:
+        - partnerName
+        - progress
+        - lastDrink
+        - history
+    PartnerProgress:
+      type: object
+      properties:
+        totalMl:
+          type: number
+        goalMl:
+          type: number
+        percent:
+          type: number
+      required:
+        - totalMl
+        - goalMl
+        - percent
+

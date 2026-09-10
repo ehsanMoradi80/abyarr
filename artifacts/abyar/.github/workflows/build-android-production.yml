@@ -1,0 +1,44 @@
+name: Build Android Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Android Production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+          sparse-checkout: |
+            artifacts/abyar
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: |
+          cd artifacts/abyar
+          pnpm install --frozen-lockfile
+
+      - name: Build Android Production
+        run: |
+          cd artifacts/abyar
+          eas build --platform android --profile production --non-interactive --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
