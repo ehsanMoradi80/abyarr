@@ -1,6 +1,7 @@
 packages:
   - 'artifacts/*'
   - 'lib/*'
+autoInstallPeers: true
 allowBuilds:
   '@clerk/shared': true
   esbuild: true
