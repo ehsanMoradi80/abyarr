@@ -17,38 +17,13 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 12
+          version: 12.3.4
           run_install: false
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-
-      - name: Check project files
-        run: |
-          echo "PWD:"
-          pwd
-
-          echo ""
-          echo "Repository:"
-          ls -la
-
-          echo ""
-          echo "artifacts:"
-          ls -la artifacts || true
-
-          echo ""
-          echo "abyar:"
-          ls -la artifacts/abyar || true
-
-          echo ""
-          echo "Git submodule status:"
-          git submodule status || true
-
-          echo ""
-          echo ".gitmodules:"
-          cat .gitmodules 2>/dev/null || echo ".gitmodules does not exist"
 
       - name: Setup Expo
         uses: expo/expo-github-action@v8
@@ -59,7 +34,9 @@ jobs:
 
       - name: Install dependencies
         working-directory: artifacts/abyar
-        run: pnpm install --frozen-lockfile
+        run: |
+          pnpm config set auto-install-peers true
+          pnpm install --frozen-lockfile
 
       - name: Build Android Production
         working-directory: artifacts/abyar
