@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       build_type:
-        description: 'Format to build (نوع خروجی)'
+        description: 'Format to build (نوع خروجی: apk یا aab یا both)'
         required: true
         default: 'apk'
         type: choice
@@ -22,11 +22,6 @@ on:
         options:
           - 'release'
           - 'debug'
-      use_eas:
-        description: 'Build via EAS Cloud (نیازمند توکن EXPO_TOKEN)'
-        required: false
-        default: false
-        type: boolean
 
 jobs:
   build-android-native:
@@ -69,7 +64,7 @@ jobs:
           chmod +x android/gradlew
 
       - name: 🚀 Build Android APK (Release)
-        if: ${{ (github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both' || github.event_name == 'push') && (github.event.inputs.build_variant == 'release' || github.event_name == 'push') }}
+        if: ${{ github.event_name == 'push' || (github.event.inputs.build_variant != 'debug' && (github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both')) }}
         working-directory: android
         run: |
           ./gradlew assembleRelease --no-daemon --stacktrace
@@ -124,33 +119,3 @@ jobs:
           echo "- 📱 **abyar-water-tracker-apk**: فایل نصبی مستقیم جهت انتقال و نصب روی گوشی اندروید" >> $GITHUB_STEP_SUMMARY
           echo "- 📦 **abyar-water-tracker-aab**: بسته انتشار جهت آپلود در کافه بازار، مایکت یا گوگل‌پلی" >> $GITHUB_STEP_SUMMARY
 
-  build-eas-cloud:
-    name: ☁️ Optional EAS Cloud Build
-    runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.use_eas == true || (secrets.EXPO_TOKEN != '' && github.event.inputs.build_type == 'aab') }}
-    timeout-minutes: 60
-
-    steps:
-      - name: 📥 Checkout
-        uses: actions/checkout@v4
-
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: 📱 Setup Expo & EAS
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          expo-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: 📦 Install dependencies
-        run: npm install --legacy-peer-deps
-
-      - name: ☁️ Trigger EAS Build
-        run: |
-          eas build --platform android --profile preview --non-interactive --wait
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
