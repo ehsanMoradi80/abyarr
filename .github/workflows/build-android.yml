@@ -39,22 +39,23 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: 📱 Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: 📱 Accept Android SDK Licenses
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: 🟢 Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
-      - name: 📦 Install Node Dependencies
-        run: |
-          npm install --legacy-peer-deps
+      - name: 🥟 Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
-      - name: 🌐 Build Web Assets
+      - name: 📦 Install Dependencies
         run: |
-          npm run build
+          bun install
 
       - name: 🐘 Setup Gradle
         uses: gradle/actions/setup-gradle@v4
