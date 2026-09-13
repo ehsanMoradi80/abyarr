@@ -59,6 +59,11 @@ jobs:
         run: |
           bun install
 
+      - name: 📦 Pre-bundle JavaScript & Assets
+        run: |
+          mkdir -p android/app/src/main/assets
+          bun x expo export:embed --platform android --dev false --entry-file node_modules/expo/AppEntry.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res
+
       - name: 🐘 Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
