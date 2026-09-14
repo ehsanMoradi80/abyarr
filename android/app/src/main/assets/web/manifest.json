@@ -1,0 +1,19 @@
+{
+  "short_name": "نوش",
+  "name": "نوش - نوشیدن آب، یادآوری عشق به خودت",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#F2F6FA",
+  "theme_color": "#2D9CFF",
+  "display": "standalone",
+  "orientation": "portrait",
+  "dir": "rtl",
+  "lang": "fa"
+}

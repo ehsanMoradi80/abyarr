@@ -1,0 +1,33 @@
+<svg width="512" height="512" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="dropletGrad" x1="20" y1="10" x2="100" y2="110" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="50%" stop-color="#0EA5E9" />
+      <stop offset="100%" stop-color="#2563EB" />
+    </linearGradient>
+    <linearGradient id="waterWaveGrad" x1="30" y1="60" x2="80" y2="105" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7DD3FC" />
+      <stop offset="50%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#2563EB" />
+    </linearGradient>
+    <linearGradient id="heartGrad" x1="90" y1="20" x2="115" y2="45" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#2563EB" />
+    </linearGradient>
+    <mask id="dropletMask">
+      <path d="M55 12 C55 12 20 52 20 78 C20 97.3 35.7 113 55 113 C74.3 113 90 97.3 90 78 C90 52 55 12 55 12 Z" fill="#FFFFFF" />
+    </mask>
+  </defs>
+
+  <!-- Droplet Outer Contour -->
+  <path d="M55 12 C55 12 18 52 18 78 C18 98.4 34.6 115 55 115 C75.4 115 92 98.4 92 78 C92 52 55 12 55 12 Z" fill="none" stroke="url(#dropletGrad)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Water inside wave -->
+  <g mask="url(#dropletMask)">
+    <path d="M15 68 C28 62 42 74 58 72 C74 70 85 62 95 65 L95 120 L15 120 Z" fill="url(#waterWaveGrad)" />
+    <path d="M27 78 C27 88 33 98 42 103" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-opacity="0.65" />
+  </g>
+
+  <!-- Companion Heart -->
+  <path d="M103.5 24 C100 20.5 94.5 20.5 91 24 C87.5 20.5 82 20.5 78.5 24 C75 27.5 75 33 78.5 36.5 L91 49 L103.5 36.5 C107 33 107 27.5 103.5 24 Z" fill="url(#heartGrad)" transform="scale(0.8) translate(22, 0)" />
+</svg>

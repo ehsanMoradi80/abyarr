@@ -1,165 +1,153 @@
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
-  TouchableOpacity,
-  ScrollView,
   SafeAreaView,
   StatusBar,
-  Alert,
+  BackHandler,
   Platform,
+  ActivityIndicator,
+  Text,
+  TouchableOpacity,
 } from 'react-native';
+import { WebView } from 'react-native-webview';
+
+// The canonical URL of the Abyar web application
+const WEB_APP_URL = 'https://ais-dev-ufdicntlroh3siayalojg7-517497980877.europe-west2.run.app';
 
 export default function App() {
-  const [waterMl, setWaterMl] = useState(750);
-  const [goalMl, setGoalMl] = useState(2000);
-  const [streakDays, setStreakDays] = useState(4);
-  const [mascotMessage, setMascotMessage] = useState('سلام! وقتشه یه لیوان آب تازه بنوشی 💧');
+  const webViewRef = useRef(null);
+  const [canGoBack, setCanGoBack] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const progressPercent = Math.min(Math.round((waterMl / goalMl) * 100), 100);
-  const glasses = Math.round(waterMl / 250);
+  // Handle hardware Android back button
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
 
-  const addWater = (amount) => {
-    const nextVal = waterMl + amount;
-    setWaterMl(nextVal);
-    if (nextVal >= goalMl) {
-      setMascotMessage('آفرین! به هدف روزانه نوشیدن آب رسیدی 🎉✨');
-    } else {
-      setMascotMessage('عالی بود! بدنت ازت تشکر میکنه 💙');
+    const onBackPress = () => {
+      if (webViewRef.current && canGoBack) {
+        webViewRef.current.goBack();
+        return true;
+      }
+      return false;
+    };
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => subscription.remove();
+  }, [canGoBack]);
+
+  // Handle native notifications & alarms dispatched by the web app
+  const handleMessage = async (event) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      if (!data || !data.type) return;
+
+      if (data.type === 'SCHEDULE_ALARM') {
+        const { userName, title } = data.payload || {};
+        try {
+          const Notifications = await import('expo-notifications');
+          const { status } = await Notifications.requestPermissionsAsync();
+          if (status === 'granted') {
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: title || '💧 وقت نوشیدن آب!',
+                body: userName ? `${userName} عزیز، وقت نوشیدن یک لیوان آب خنک است 💧` : 'یک لیوان آب تازه برای سلامتی و شادابیت بنوش!',
+                sound: true,
+              },
+              trigger: {
+                seconds: (data.payload?.intervalMinutes || 60) * 60,
+                repeats: true,
+              },
+            });
+          }
+        } catch (err) {
+          console.warn('Native notification scheduling failed:', err);
+        }
+      } else if (data.type === 'CANCEL_ALARM') {
+        try {
+          const Notifications = await import('expo-notifications');
+          await Notifications.cancelAllScheduledNotificationsAsync();
+        } catch (err) {
+          console.warn('Native notification cancellation failed:', err);
+        }
+      }
+    } catch (err) {
+      // Non-JSON message, safe to ignore
     }
   };
 
-  const resetWater = () => {
-    Alert.alert(
-      'بازنشانی ثبت امروز',
-      'آیا مطمئن هستید که می‌خواهید میزان مصرف آب امروز را صفر کنید؟',
-      [
-        { text: 'انصراف', style: 'cancel' },
-        {
-          text: 'بله، صفر شود',
-          style: 'destructive',
-          onPress: () => {
-            setWaterMl(0);
-            setMascotMessage('روز جدید، شروع جدید! اولین لیوان آب را بنوش 🌱');
-          },
-        },
-      ]
-    );
-  };
-
-  const scheduleReminder = async () => {
-    try {
-      const Notifications = await import('expo-notifications');
-      const { status } = await Notifications.requestPermissionsAsync();
-      if (status === 'granted') {
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: '💧 یادآور آب‌یار',
-            body: 'وقت نوشیدن یک لیوان آب خنک و گواراست!',
-            sound: true,
-          },
-          trigger: {
-            seconds: 60 * 60, // Every hour
-            repeats: true,
-          },
-        });
-        Alert.alert('موفق', 'یادآور ساعتی با موفقیت فعال شد 🔔');
-      } else {
-        Alert.alert('دسترسی لازم است', 'لطفاً دسترسی اعلان‌ها را در تنظیمات فعال کنید.');
-      }
-    } catch (e) {
-      Alert.alert('تنظیم یادآور', 'یادآور روی دستگاه شما فعال شد.');
+  const reloadApp = () => {
+    setHasError(false);
+    setIsLoading(true);
+    if (webViewRef.current) {
+      webViewRef.current.reload();
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#168C9B" />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>آب‌یار | Abyar</Text>
-          <Text style={styles.subtitle}>نوشیدن آب، یادآوری عشق به خودت 💙</Text>
-        </View>
+      <StatusBar barStyle="dark-content" backgroundColor="#F2F6FA" />
 
-        {/* Mascot Card */}
-        <View style={styles.mascotCard}>
-          <Text style={styles.mascotAvatar}>💧</Text>
-          <View style={styles.mascotTextContainer}>
-            <Text style={styles.mascotName}>پیام دوست داشتنی «نوش»:</Text>
-            <Text style={styles.mascotText}>{mascotMessage}</Text>
+      <View style={styles.webContainer}>
+        <WebView
+          ref={webViewRef}
+          source={{ uri: WEB_APP_URL }}
+          style={styles.webview}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          startInLoadingState={true}
+          allowsInlineMediaPlayback={true}
+          mediaPlaybackRequiresUserAction={false}
+          scalesPageToFit={true}
+          mixedContentMode="always"
+          originWhitelist={['*']}
+          cacheEnabled={true}
+          thirdPartyCookiesEnabled={true}
+          sharedCookiesEnabled={true}
+          onNavigationStateChange={(navState) => {
+            setCanGoBack(navState.canGoBack);
+          }}
+          onLoadStart={() => {
+            setIsLoading(true);
+            setHasError(false);
+          }}
+          onLoadEnd={() => {
+            setIsLoading(false);
+          }}
+          onError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            console.warn('WebView error: ', nativeEvent);
+            setHasError(true);
+            setErrorMessage(nativeEvent.description || 'عدم دسترسی به اینترنت');
+            setIsLoading(false);
+          }}
+          onMessage={handleMessage}
+        />
+
+        {/* Loading Overlay */}
+        {isLoading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#2D9CFF" />
+            <Text style={styles.loadingText}>در حال بارگذاری آب‌یار...</Text>
           </View>
-        </View>
+        )}
 
-        {/* Progress Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>مصرف امروز شما</Text>
-          <View style={styles.progressCircle}>
-            <Text style={styles.progressNumber}>{waterMl}</Text>
-            <Text style={styles.progressUnit}>میلی‌لیتر از {goalMl}</Text>
-            <Text style={styles.progressPercent}>{progressPercent}% تکمیل شده</Text>
-          </View>
-
-          {/* Progress Bar */}
-          <View style={styles.progressBarBackground}>
-            <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
-          </View>
-
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statVal}>{glasses}</Text>
-              <Text style={styles.statLbl}>لیوان مصرفی</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statVal}>{streakDays} روز 🔥</Text>
-              <Text style={styles.statLbl}>زنجیره متوالی</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Quick Add Buttons */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>ثبت سریع مصرف آب</Text>
-          <View style={styles.buttonGrid}>
-            <TouchableOpacity style={styles.actionBtn} onPress={() => addWater(250)}>
-              <Text style={styles.actionBtnEmoji}>🥛</Text>
-              <Text style={styles.actionBtnText}>+۲۵۰ میلی‌لیتر</Text>
-              <Text style={styles.actionBtnSub}>یک لیوان استاندارد</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionBtn} onPress={() => addWater(500)}>
-              <Text style={styles.actionBtnEmoji}>🍶</Text>
-              <Text style={styles.actionBtnText}>+۵۰۰ میلی‌لیتر</Text>
-              <Text style={styles.actionBtnSub}>یک بطری کوچک</Text>
+        {/* Offline / Connection Error Overlay */}
+        {hasError && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorEmoji}>📶</Text>
+            <Text style={styles.errorTitle}>خطا در اتصال به برنامه</Text>
+            <Text style={styles.errorDescription}>
+              لطفاً اتصال اینترنت خود را بررسی کنید و مجدداً تلاش نمایید.
+            </Text>
+            <TouchableOpacity style={styles.retryButton} onPress={reloadApp}>
+              <Text style={styles.retryButtonText}>تلاش مجدد</Text>
             </TouchableOpacity>
           </View>
-
-          <View style={styles.buttonGrid}>
-            <TouchableOpacity style={[styles.actionBtn, styles.actionBtnOutline]} onPress={() => addWater(100)}>
-              <Text style={styles.actionBtnEmoji}>☕</Text>
-              <Text style={styles.actionBtnTextOutline}>+۱۰۰ میلی‌لیتر</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={[styles.actionBtn, styles.actionBtnOutline]} onPress={() => addWater(350)}>
-              <Text style={styles.actionBtnEmoji}>🥤</Text>
-              <Text style={styles.actionBtnTextOutline}>+۳۵۰ میلی‌لیتر</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Actions & Reminder */}
-        <View style={styles.footerActions}>
-          <TouchableOpacity style={styles.reminderBtn} onPress={scheduleReminder}>
-            <Text style={styles.reminderBtnText}>🔔 فعال‌سازی یادآور خودکار</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.resetBtn} onPress={resetWater}>
-            <Text style={styles.resetBtnText}>صفر کردن مصرف امروز</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+        )}
+      </View>
     </SafeAreaView>
   );
 }
@@ -167,194 +155,69 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0F9FA',
+    backgroundColor: '#F2F6FA',
   },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 20,
-    marginTop: 10,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#168C9B',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#557A80',
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  mascotCard: {
-    flexDirection: 'row-reverse',
-    backgroundColor: '#E1F5F7',
-    padding: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#BEE5EB',
-  },
-  mascotAvatar: {
-    fontSize: 34,
-    marginLeft: 12,
-  },
-  mascotTextContainer: {
+  webContainer: {
     flex: 1,
+    position: 'relative',
   },
-  mascotName: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#0E5C66',
-    textAlign: 'right',
+  webview: {
+    flex: 1,
+    backgroundColor: '#F2F6FA',
   },
-  mascotText: {
-    fontSize: 13,
-    color: '#1B4950',
-    marginTop: 2,
-    textAlign: 'right',
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#168C9B',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1A363B',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  progressCircle: {
-    alignItems: 'center',
+  loadingContainer: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#F2F6FA',
     justifyContent: 'center',
-    marginVertical: 10,
-  },
-  progressNumber: {
-    fontSize: 44,
-    fontWeight: '800',
-    color: '#168C9B',
-  },
-  progressUnit: {
-    fontSize: 14,
-    color: '#769499',
-    marginTop: 2,
-  },
-  progressPercent: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#0E5C66',
-    backgroundColor: '#E6F7F9',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginTop: 8,
-  },
-  progressBarBackground: {
-    height: 12,
-    backgroundColor: '#E2F0F2',
-    borderRadius: 6,
-    overflow: 'hidden',
-    marginVertical: 16,
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#168C9B',
-    borderRadius: 6,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
     alignItems: 'center',
-    marginTop: 8,
+    zIndex: 10,
   },
-  statItem: {
+  loadingText: {
+    marginTop: 14,
+    fontSize: 15,
+    color: '#0284C7',
+    fontWeight: '600',
+  },
+  errorContainer: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#F2F6FA',
+    justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 28,
+    zIndex: 20,
   },
-  statVal: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1A363B',
-  },
-  statLbl: {
-    fontSize: 12,
-    color: '#769499',
-    marginTop: 2,
-  },
-  statDivider: {
-    width: 1,
-    height: 30,
-    backgroundColor: '#E2F0F2',
-  },
-  buttonGrid: {
-    flexDirection: 'row',
-    gap: 12,
+  errorEmoji: {
+    fontSize: 48,
     marginBottom: 12,
   },
-  actionBtn: {
-    flex: 1,
-    backgroundColor: '#168C9B',
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-  },
-  actionBtnOutline: {
-    backgroundColor: '#F3FAFB',
-    borderWidth: 1,
-    borderColor: '#CDEBF0',
-  },
-  actionBtnEmoji: {
-    fontSize: 24,
-    marginBottom: 4,
-  },
-  actionBtnText: {
-    color: '#FFFFFF',
+  errorTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
+    color: '#1E293B',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  errorDescription: {
     fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 22,
   },
-  actionBtnSub: {
-    color: '#D8F3F6',
-    fontSize: 11,
-    marginTop: 2,
+  retryButton: {
+    backgroundColor: '#2D9CFF',
+    paddingHorizontal: 26,
+    paddingVertical: 12,
+    borderRadius: 12,
+    shadowColor: '#2D9CFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  actionBtnTextOutline: {
-    color: '#168C9B',
-    fontWeight: 'bold',
-    fontSize: 13,
-  },
-  footerActions: {
-    marginTop: 8,
-    gap: 12,
-  },
-  reminderBtn: {
-    backgroundColor: '#0E5C66',
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-  },
-  reminderBtnText: {
+  retryButtonText: {
     color: '#FFFFFF',
-    fontWeight: 'bold',
     fontSize: 15,
-  },
-  resetBtn: {
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  resetBtnText: {
-    color: '#D9534F',
-    fontSize: 13,
+    fontWeight: 'bold',
   },
 });
