@@ -1,223 +1,398 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   View,
+  Text,
   SafeAreaView,
   StatusBar,
-  BackHandler,
-  Platform,
-  ActivityIndicator,
-  Text,
   TouchableOpacity,
 } from 'react-native';
-import { WebView } from 'react-native-webview';
 
-// The canonical URL of the Abyar web application
-const WEB_APP_URL = 'https://ais-dev-ufdicntlroh3siayalojg7-517497980877.europe-west2.run.app';
+import { Header } from './native/Header';
+import { HomeScreen } from './native/HomeScreen';
+import { HistoryScreen } from './native/HistoryScreen';
+import { StatsScreen } from './native/StatsScreen';
+import { SettingsScreen } from './native/SettingsScreen';
+import { CustomAmountModal } from './native/CustomAmountModal';
+import { CelebrationModal } from './native/CelebrationModal';
+import { BadgesModal } from './native/BadgesModal';
+
+import {
+  loadAppData,
+  saveAppData,
+  filterTodayLogs,
+  calculateDailyStats,
+} from './native/storage';
+import {
+  requestNotificationPermission,
+  scheduleWaterReminder,
+  cancelAllReminders,
+} from './native/notifications';
 
 export default function App() {
-  const webViewRef = useRef(null);
-  const [canGoBack, setCanGoBack] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [activeTab, setActiveTab] = useState('home'); // 'home' | 'history' | 'stats' | 'settings'
 
-  // Handle hardware Android back button
+  // App State
+  const [userName, setUserName] = useState('دوست من');
+  const [goalGlasses, setGoalGlasses] = useState(8);
+  const [logs, setLogs] = useState([]);
+  const [streakDays, setStreakDays] = useState(1);
+  const [reminderEnabled, setReminderEnabled] = useState(true);
+  const [reminderInterval, setReminderInterval] = useState(60);
+  const [hasCelebratedToday, setHasCelebratedToday] = useState(false);
+
+  // Modals
+  const [showCustomAmountModal, setShowCustomAmountModal] = useState(false);
+  const [showCelebrationModal, setShowCelebrationModal] = useState(false);
+  const [showBadgesModal, setShowBadgesModal] = useState(false);
+
+  // Load persistent data on start
   useEffect(() => {
-    if (Platform.OS !== 'android') return;
+    async function init() {
+      const data = await loadAppData();
+      if (data) {
+        if (data.name) setUserName(data.name);
+        if (data.goalGlasses) setGoalGlasses(data.goalGlasses);
+        if (Array.isArray(data.logs)) setLogs(data.logs);
+        if (data.streakDays) setStreakDays(data.streakDays);
+        if (data.reminderEnabled !== undefined) setReminderEnabled(data.reminderEnabled);
+        if (data.reminderIntervalMinutes) setReminderInterval(data.reminderIntervalMinutes);
+        if (data.hasCelebratedToday !== undefined) setHasCelebratedToday(data.hasCelebratedToday);
 
-    const onBackPress = () => {
-      if (webViewRef.current && canGoBack) {
-        webViewRef.current.goBack();
-        return true;
+        // Schedule notifications if enabled
+        if (data.reminderEnabled) {
+          const permitted = await requestNotificationPermission();
+          if (permitted) {
+            await scheduleWaterReminder(data.reminderIntervalMinutes || 60, data.name);
+          }
+        }
       }
-      return false;
+    }
+    init();
+  }, []);
+
+  // Today's calculated stats
+  const { todayLogs, totalGlasses } = calculateDailyStats(logs);
+
+  // Add water action
+  const handleAddWater = useCallback((glasses = 1, ml = 250) => {
+    const newLog = {
+      id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+      amountGlasses: glasses,
+      amountMl: ml,
+      loggedAt: new Date().toISOString(),
     };
 
-    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
-    return () => subscription.remove();
-  }, [canGoBack]);
+    setLogs((prevLogs) => {
+      const updatedLogs = [newLog, ...prevLogs];
 
-  // Handle native notifications & alarms dispatched by the web app
-  const handleMessage = async (event) => {
-    try {
-      const data = JSON.parse(event.nativeEvent.data);
-      if (!data || !data.type) return;
+      // Check if user hit daily goal
+      const prevStats = calculateDailyStats(prevLogs);
+      const newTotal = prevStats.totalGlasses + glasses;
 
-      if (data.type === 'SCHEDULE_ALARM') {
-        const { userName, title } = data.payload || {};
-        try {
-          const Notifications = await import('expo-notifications');
-          const { status } = await Notifications.requestPermissionsAsync();
-          if (status === 'granted') {
-            await Notifications.scheduleNotificationAsync({
-              content: {
-                title: title || '💧 وقت نوشیدن آب!',
-                body: userName ? `${userName} عزیز، وقت نوشیدن یک لیوان آب خنک است 💧` : 'یک لیوان آب تازه برای سلامتی و شادابیت بنوش!',
-                sound: true,
-              },
-              trigger: {
-                seconds: (data.payload?.intervalMinutes || 60) * 60,
-                repeats: true,
-              },
-            });
-          }
-        } catch (err) {
-          console.warn('Native notification scheduling failed:', err);
-        }
-      } else if (data.type === 'CANCEL_ALARM') {
-        try {
-          const Notifications = await import('expo-notifications');
-          await Notifications.cancelAllScheduledNotificationsAsync();
-        } catch (err) {
-          console.warn('Native notification cancellation failed:', err);
-        }
+      if (newTotal >= goalGlasses && !hasCelebratedToday) {
+        setShowCelebrationModal(true);
+        setHasCelebratedToday(true);
       }
-    } catch (err) {
-      // Non-JSON message, safe to ignore
-    }
-  };
 
-  const reloadApp = () => {
-    setHasError(false);
-    setIsLoading(true);
-    if (webViewRef.current) {
-      webViewRef.current.reload();
+      // Persist to storage
+      saveAppData({
+        logs: updatedLogs,
+        hasCelebratedToday: newTotal >= goalGlasses,
+      });
+
+      return updatedLogs;
+    });
+  }, [goalGlasses, hasCelebratedToday]);
+
+  // Delete water log
+  const handleDeleteWater = useCallback((logId) => {
+    setLogs((prevLogs) => {
+      const updatedLogs = prevLogs.filter((item) => item.id !== logId);
+      saveAppData({ logs: updatedLogs });
+      return updatedLogs;
+    });
+  }, []);
+
+  // Reset today's intake
+  const handleResetToday = useCallback(() => {
+    const todayLogsIds = new Set(todayLogs.map((l) => l.id));
+    setLogs((prevLogs) => {
+      const updatedLogs = prevLogs.filter((item) => !todayLogsIds.has(item.id));
+      saveAppData({ logs: updatedLogs, hasCelebratedToday: false });
+      return updatedLogs;
+    });
+    setHasCelebratedToday(false);
+  }, [todayLogs]);
+
+  // Save settings
+  const handleSaveSettings = useCallback(async (newSettings) => {
+    setUserName(newSettings.name);
+    setGoalGlasses(newSettings.goalGlasses);
+    setReminderEnabled(newSettings.reminderEnabled);
+    setReminderInterval(newSettings.reminderIntervalMinutes);
+
+    await saveAppData({
+      name: newSettings.name,
+      goalGlasses: newSettings.goalGlasses,
+      reminderEnabled: newSettings.reminderEnabled,
+      reminderIntervalMinutes: newSettings.reminderIntervalMinutes,
+    });
+
+    if (newSettings.reminderEnabled) {
+      await scheduleWaterReminder(newSettings.reminderIntervalMinutes, newSettings.name);
+    } else {
+      await cancelAllReminders();
     }
-  };
+  }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#F2F6FA" />
 
-      <View style={styles.webContainer}>
-        <WebView
-          ref={webViewRef}
-          source={{ uri: WEB_APP_URL }}
-          style={styles.webview}
-          javaScriptEnabled={true}
-          domStorageEnabled={true}
-          startInLoadingState={true}
-          allowsInlineMediaPlayback={true}
-          mediaPlaybackRequiresUserAction={false}
-          scalesPageToFit={true}
-          mixedContentMode="always"
-          originWhitelist={['*']}
-          cacheEnabled={true}
-          thirdPartyCookiesEnabled={true}
-          sharedCookiesEnabled={true}
-          onNavigationStateChange={(navState) => {
-            setCanGoBack(navState.canGoBack);
-          }}
-          onLoadStart={() => {
-            setIsLoading(true);
-            setHasError(false);
-          }}
-          onLoadEnd={() => {
-            setIsLoading(false);
-          }}
-          onError={(syntheticEvent) => {
-            const { nativeEvent } = syntheticEvent;
-            console.warn('WebView error: ', nativeEvent);
-            setHasError(true);
-            setErrorMessage(nativeEvent.description || 'عدم دسترسی به اینترنت');
-            setIsLoading(false);
-          }}
-          onMessage={handleMessage}
+      {/* Main App Container */}
+      <View style={styles.appContainer}>
+        {/* Header (with compact logo, greeting, and actions) */}
+        <Header
+          title={userName ? `سلام ${userName}! 🌊` : 'سلام! 🌊'}
+          subtitle="نوشیدن آب، یادآوری عشق به خودت"
+          streakDays={streakDays}
+          onOpenBadges={() => setShowBadgesModal(true)}
+          onOpenReminders={() => setActiveTab('settings')}
         />
 
-        {/* Loading Overlay */}
-        {isLoading && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#2D9CFF" />
-            <Text style={styles.loadingText}>در حال بارگذاری آب‌یار...</Text>
-          </View>
-        )}
+        {/* Tab Content Views */}
+        <View style={styles.screenContent}>
+          {activeTab === 'home' && (
+            <HomeScreen
+              todayGlasses={totalGlasses}
+              goalGlasses={goalGlasses}
+              todayLogs={todayLogs}
+              streakDays={streakDays}
+              onAddWater={handleAddWater}
+              onDeleteWater={handleDeleteWater}
+              onOpenCustomAmount={() => setShowCustomAmountModal(true)}
+            />
+          )}
 
-        {/* Offline / Connection Error Overlay */}
-        {hasError && (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorEmoji}>📶</Text>
-            <Text style={styles.errorTitle}>خطا در اتصال به برنامه</Text>
-            <Text style={styles.errorDescription}>
-              لطفاً اتصال اینترنت خود را بررسی کنید و مجدداً تلاش نمایید.
-            </Text>
-            <TouchableOpacity style={styles.retryButton} onPress={reloadApp}>
-              <Text style={styles.retryButtonText}>تلاش مجدد</Text>
+          {activeTab === 'history' && (
+            <HistoryScreen
+              logs={logs}
+              goalGlasses={goalGlasses}
+              onDeleteWater={handleDeleteWater}
+            />
+          )}
+
+          {activeTab === 'stats' && (
+            <StatsScreen
+              logs={logs}
+              goalGlasses={goalGlasses}
+              streakDays={streakDays}
+            />
+          )}
+
+          {activeTab === 'settings' && (
+            <SettingsScreen
+              name={userName}
+              goalGlasses={goalGlasses}
+              reminderEnabled={reminderEnabled}
+              reminderIntervalMinutes={reminderInterval}
+              onSaveSettings={handleSaveSettings}
+              onResetToday={handleResetToday}
+            />
+          )}
+        </View>
+
+        {/* Bottom Navigation Bar */}
+        <View style={styles.bottomNavContainer}>
+          <View style={styles.bottomNavContent}>
+            {/* Tab 1: Home */}
+            <TouchableOpacity
+              style={styles.navItem}
+              onPress={() => setActiveTab('home')}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.navIconBox, activeTab === 'home' && styles.navIconBoxActive]}>
+                <Text style={styles.navIcon}>🏠</Text>
+              </View>
+              <Text style={[styles.navLabel, activeTab === 'home' && styles.navLabelActive]}>
+                خانه
+              </Text>
+            </TouchableOpacity>
+
+            {/* Tab 2: History */}
+            <TouchableOpacity
+              style={styles.navItem}
+              onPress={() => setActiveTab('history')}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.navIconBox, activeTab === 'history' && styles.navIconBoxActive]}>
+                <Text style={styles.navIcon}>📜</Text>
+              </View>
+              <Text style={[styles.navLabel, activeTab === 'history' && styles.navLabelActive]}>
+                تاریخچه
+              </Text>
+            </TouchableOpacity>
+
+            {/* Floating Central Quick Drink Button (+) */}
+            <View style={styles.floatingCenterWrapper}>
+              <TouchableOpacity
+                style={styles.floatingButton}
+                onPress={() => handleAddWater(1, 250)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.floatingButtonPlus}>+</Text>
+                <Text style={styles.floatingButtonSub}>۱ لیوان</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Tab 3: Stats */}
+            <TouchableOpacity
+              style={styles.navItem}
+              onPress={() => setActiveTab('stats')}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.navIconBox, activeTab === 'stats' && styles.navIconBoxActive]}>
+                <Text style={styles.navIcon}>📊</Text>
+              </View>
+              <Text style={[styles.navLabel, activeTab === 'stats' && styles.navLabelActive]}>
+                گزارش
+              </Text>
+            </TouchableOpacity>
+
+            {/* Tab 4: Settings */}
+            <TouchableOpacity
+              style={styles.navItem}
+              onPress={() => setActiveTab('settings')}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.navIconBox, activeTab === 'settings' && styles.navIconBoxActive]}>
+                <Text style={styles.navIcon}>⚙️</Text>
+              </View>
+              <Text style={[styles.navLabel, activeTab === 'settings' && styles.navLabelActive]}>
+                تنظیمات
+              </Text>
             </TouchableOpacity>
           </View>
-        )}
+        </View>
       </View>
+
+      {/* Modals */}
+      <CustomAmountModal
+        visible={showCustomAmountModal}
+        onClose={() => setShowCustomAmountModal(false)}
+        onAddCustom={handleAddWater}
+      />
+
+      <CelebrationModal
+        visible={showCelebrationModal}
+        goalGlasses={goalGlasses}
+        streakDays={streakDays}
+        onClose={() => setShowCelebrationModal(false)}
+      />
+
+      <BadgesModal
+        visible={showBadgesModal}
+        logs={logs}
+        todayGlasses={totalGlasses}
+        goalGlasses={goalGlasses}
+        streakDays={streakDays}
+        onClose={() => setShowBadgesModal(false)}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: '#F2F6FA',
   },
-  webContainer: {
-    flex: 1,
-    position: 'relative',
-  },
-  webview: {
+  appContainer: {
     flex: 1,
     backgroundColor: '#F2F6FA',
   },
-  loadingContainer: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#F2F6FA',
-    justifyContent: 'center',
+  screenContent: {
+    flex: 1,
+  },
+
+  // Bottom Navigation Bar
+  bottomNavContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    paddingBottom: 6,
+    paddingTop: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  bottomNavContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
     alignItems: 'center',
-    zIndex: 10,
+    paddingHorizontal: 8,
   },
-  loadingText: {
-    marginTop: 14,
-    fontSize: 15,
-    color: '#0284C7',
-    fontWeight: '600',
-  },
-  errorContainer: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#F2F6FA',
-    justifyContent: 'center',
+  navItem: {
+    flex: 1,
     alignItems: 'center',
-    paddingHorizontal: 28,
-    zIndex: 20,
+    paddingVertical: 4,
   },
-  errorEmoji: {
-    fontSize: 48,
-    marginBottom: 12,
-  },
-  errorTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1E293B',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  errorDescription: {
-    fontSize: 14,
-    color: '#64748B',
-    textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 22,
-  },
-  retryButton: {
-    backgroundColor: '#2D9CFF',
-    paddingHorizontal: 26,
-    paddingVertical: 12,
+  navIconBox: {
+    padding: 6,
     borderRadius: 12,
+  },
+  navIconBoxActive: {
+    backgroundColor: '#E6F4FF',
+  },
+  navIcon: {
+    fontSize: 18,
+  },
+  navLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+    marginTop: 2,
+  },
+  navLabelActive: {
+    color: '#2D9CFF',
+    fontWeight: '800',
+  },
+
+  // Floating Central Button
+  floatingCenterWrapper: {
+    marginTop: -22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  floatingButton: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: '#2D9CFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
     shadowColor: '#2D9CFF',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.4,
     shadowRadius: 6,
-    elevation: 3,
+    elevation: 5,
   },
-  retryButtonText: {
+  floatingButtonPlus: {
+    fontSize: 22,
+    fontWeight: '900',
     color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: 'bold',
+    lineHeight: 24,
+  },
+  floatingButtonSub: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#E0F2FE',
+    marginTop: -2,
   },
 });

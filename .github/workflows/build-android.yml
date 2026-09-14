@@ -61,9 +61,7 @@ jobs:
 
       - name: 📦 Pre-bundle JavaScript & Assets
         run: |
-          mkdir -p android/app/src/main/assets/web
-          bun run build
-          cp -r dist/* android/app/src/main/assets/web/
+          mkdir -p android/app/src/main/assets
           bun x expo export:embed --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res
 
       - name: 🐘 Setup Gradle

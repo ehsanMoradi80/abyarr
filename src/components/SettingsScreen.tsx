@@ -718,7 +718,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onOpenSplash }) 
       {/* App Info / Android Badge / Disclaimer */}
       <div className="p-5 rounded-3xl bg-white dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] text-center space-y-3 shadow-2xs">
         <div className="flex flex-col items-center justify-center gap-2">
-          <AppLogo size={58} showHeart={true} animated={true} />
+          <AppLogo size={38} showHeart={true} animated={true} />
           <div>
             <h4 className="text-base font-black text-[#2D9CFF]">
               {strings.appName}
