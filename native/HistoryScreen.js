@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { Calendar, Trash2, Droplet, Clock } from 'lucide-react-native';
 import { formatNumber, formatGlasses, formatDate, formatTime, formatDayOfWeek } from './strings';
 
 export function HistoryScreen({ logs = [], goalGlasses = 8, onDeleteWater }) {
@@ -36,18 +37,25 @@ export function HistoryScreen({ logs = [], goalGlasses = 8, onDeleteWater }) {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.headerTitleRow}>
-        <Text style={styles.headerCountBadge}>
-          {formatNumber(logs.length)} ثبت در مجموع
-        </Text>
-        <Text style={styles.headerTitleText}>تاریخچه مصرف آب</Text>
+        <View style={styles.headerCountBadge}>
+          <Text style={styles.headerCountBadgeText}>
+            {formatNumber(logs.length)} ثبت در مجموع
+          </Text>
+        </View>
+        <View style={styles.titleWrapper}>
+          <Clock size={16} color="#2D9CFF" strokeWidth={2.2} />
+          <Text style={styles.headerTitleText}>تاریخچه مصرف آب</Text>
+        </View>
       </View>
 
       {sortedKeys.length === 0 ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyIcon}>📜</Text>
+          <View style={styles.emptyIconBox}>
+            <Calendar size={28} color="#94A3B8" strokeWidth={1.8} />
+          </View>
           <Text style={styles.emptyTitle}>هنوز سابقه مصرفی ثبت نشده است</Text>
           <Text style={styles.emptySubtitle}>
-            هر زمان که در صفحه اصلی آب بنوشی، ثبت‌هایت به تفکیک روز در اینجا نگهداری می‌شوند.
+            هر زمان که در صفحه اصلی آب بنوشید، ثبت‌هایتان به تفکیک روز در اینجا نگهداری می‌شوند.
           </Text>
         </View>
       ) : (
@@ -81,7 +89,7 @@ export function HistoryScreen({ logs = [], goalGlasses = 8, onDeleteWater }) {
                       style={styles.deleteButton}
                       activeOpacity={0.6}
                     >
-                      <Text style={styles.deleteText}>🗑️</Text>
+                      <Trash2 size={15} color="#EF4444" strokeWidth={2.2} />
                     </TouchableOpacity>
 
                     <View style={styles.logDetails}>
@@ -92,7 +100,7 @@ export function HistoryScreen({ logs = [], goalGlasses = 8, onDeleteWater }) {
                     </View>
 
                     <View style={styles.logIconWrapper}>
-                      <Text style={styles.logIcon}>💧</Text>
+                      <Droplet size={14} color="#2D9CFF" fill="#2D9CFF" />
                     </View>
                   </View>
                 ))}
@@ -123,20 +131,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
+  titleWrapper: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+  },
   headerTitleText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
     color: '#1E293B',
     writingDirection: 'rtl',
   },
   headerCountBadge: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#0284C7',
     backgroundColor: '#E0F2FE',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
+  },
+  headerCountBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#0284C7',
   },
   emptyCard: {
     backgroundColor: '#FFFFFF',
@@ -145,24 +160,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    marginTop: 20,
+    marginTop: 16,
   },
-  emptyIcon: {
-    fontSize: 40,
+  emptyIconBox: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 12,
   },
   emptyTitle: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '800',
     color: '#1E293B',
     marginBottom: 6,
     writingDirection: 'rtl',
   },
   emptySubtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#64748B',
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 19,
     writingDirection: 'rtl',
   },
   dayCard: {
@@ -192,13 +212,13 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   dayDateText: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '800',
     color: '#1E293B',
     writingDirection: 'rtl',
   },
   dayNameText: {
-    fontSize: 11,
+    fontSize: 10.5,
     color: '#64748B',
     marginTop: 1,
     writingDirection: 'rtl',
@@ -206,15 +226,15 @@ const styles = StyleSheet.create({
   dayStatsBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   dayStatsText: {
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: '700',
     color: '#0284C7',
   },
   dayPercentText: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '800',
     color: '#10B981',
     backgroundColor: '#ECFDF5',
@@ -236,22 +256,19 @@ const styles = StyleSheet.create({
   deleteButton: {
     padding: 6,
   },
-  deleteText: {
-    fontSize: 14,
-  },
   logDetails: {
     flex: 1,
     alignItems: 'flex-end',
     marginRight: 10,
   },
   logGlasses: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '700',
     color: '#1E293B',
     writingDirection: 'rtl',
   },
   logTime: {
-    fontSize: 11,
+    fontSize: 10.5,
     color: '#64748B',
     marginTop: 1,
     writingDirection: 'rtl',
@@ -263,8 +280,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#E6F4FF',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  logIcon: {
-    fontSize: 14,
   },
 });

@@ -1,16 +1,16 @@
-// Persian strings and formatting utilities for Abyar Native React Native App
+// Persian strings and formatting utilities for Noosh React Native App
 
 export const strings = {
   appName: 'نوش',
   tagline: 'نوشیدن آب، یادآوری عشق به خودت',
-  greeting: 'آب خوردن یادت نره 💙',
+  greeting: 'آب خوردن یادت نره',
   dailyGoal: 'هدف روزانه',
   progress: 'پیشرفت امروز',
   remaining: 'مانده تا هدف',
-  completed: 'هدف امروز کامل شد! 🎉',
+  completed: 'هدف امروز کامل شد!',
   quickAdd: 'ثبت سریع مصرف آب',
   todayLogs: 'گزارش مصرف امروز',
-  noLogsToday: 'امروز هنوز آبی ثبت نشده است. با یک لیوان شروع کن!',
+  noLogsToday: 'امروز هنوز آبی ثبت نشده است. با یک لیوان شروع کنید!',
   customAmount: 'ثبت مقدار دلخواه',
   history: 'تاریخچه',
   stats: 'گزارش و آمار',
@@ -28,8 +28,8 @@ export const strings = {
   cancel: 'انصراف',
   resetToday: 'صفر کردن مصرف امروز',
   resetConfirm: 'آیا مطمئن هستید که می‌خواهید آمار مصرف امروز را صفر کنید؟',
-  reminderTitle: '💧 وقت نوشیدن آب!',
-  reminderBody: 'یک لیوان آب تازه برای سلامتی و شادابیت بنوش!',
+  reminderTitle: 'وقت نوشیدن آب!',
+  reminderBody: 'یک لیوان آب تازه برای سلامتی و شادابیت بنوشید!',
   drinkWater: 'نوشیدن',
   ml: 'میلی‌لیتر',
   glass: 'لیوان',

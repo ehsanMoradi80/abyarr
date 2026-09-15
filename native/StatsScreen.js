@@ -5,6 +5,7 @@ import {
   Text,
   ScrollView,
 } from 'react-native';
+import { BarChart3, Droplets, Trophy, Target, Flame, Sparkles, Droplet } from 'lucide-react-native';
 import { formatNumber, formatGlasses } from './strings';
 
 const PERSIAN_WEEK_DAYS = ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج']; // شنبه تا جمعه
@@ -28,7 +29,6 @@ export function StatsScreen({ logs = [], goalGlasses = 8, streakDays = 1 }) {
     const dayTotalGlasses = dayLogs.reduce((sum, item) => sum + (item.amountGlasses || 1), 0);
     const dayTotalMl = dayLogs.reduce((sum, item) => sum + (item.amountMl || 250), 0);
 
-    // Day of week index (in JS: 0 is Sun, 6 is Sat. In Iranian calendar: Sat is 0, Fri is 6)
     const jsDay = d.getDay();
     const persianDayIndex = (jsDay + 1) % 7;
 
@@ -46,7 +46,6 @@ export function StatsScreen({ logs = [], goalGlasses = 8, streakDays = 1 }) {
   const totalAllTimeGlasses = logs.reduce((sum, item) => sum + (item.amountGlasses || 1), 0);
   const totalAllTimeMl = logs.reduce((sum, item) => sum + (item.amountMl || 250), 0);
 
-  // Group by unique day to find distinct active days
   const uniqueDaysMap = {};
   logs.forEach((log) => {
     const d = new Date(log.loggedAt);
@@ -66,7 +65,10 @@ export function StatsScreen({ logs = [], goalGlasses = 8, streakDays = 1 }) {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.headerRow}>
-        <Text style={styles.headerTitleText}>گزارش و تحلیل مصرف آب</Text>
+        <View style={styles.headerTitleWrapper}>
+          <BarChart3 size={17} color="#2D9CFF" strokeWidth={2.2} />
+          <Text style={styles.headerTitleText}>گزارش و تحلیل مصرف آب</Text>
+        </View>
       </View>
 
       {/* 1. 7-Day Weekly Chart Card */}
@@ -79,7 +81,7 @@ export function StatsScreen({ logs = [], goalGlasses = 8, streakDays = 1 }) {
         {/* Bars Container */}
         <View style={styles.barsContainer}>
           {past7DaysData.map((day, idx) => {
-            const isFull = day.glasses >= goalGlasses;
+            const isFull = day.glasses >= goalGlasses && goalGlasses > 0;
             const barHeightPct = Math.min(Math.max((day.glasses / (goalGlasses || 8)) * 100, 4), 100);
 
             return (
@@ -114,28 +116,36 @@ export function StatsScreen({ logs = [], goalGlasses = 8, streakDays = 1 }) {
       <View style={styles.metricsGrid}>
         {/* Metric 1 */}
         <View style={styles.metricCard}>
-          <Text style={styles.metricIcon}>🥛</Text>
+          <View style={styles.metricIconBox}>
+            <Droplets size={18} color="#2D9CFF" strokeWidth={2.2} />
+          </View>
           <Text style={styles.metricValue}>{formatGlasses(averageDailyGlasses)}</Text>
           <Text style={styles.metricLabel}>میانگین مصرف روزانه</Text>
         </View>
 
         {/* Metric 2 */}
         <View style={styles.metricCard}>
-          <Text style={styles.metricIcon}>🏆</Text>
+          <View style={styles.metricIconBox}>
+            <Trophy size={18} color="#EAB308" strokeWidth={2.2} />
+          </View>
           <Text style={styles.metricValue}>{formatGlasses(bestDayGlasses)}</Text>
           <Text style={styles.metricLabel}>بیشترین مصرف یک روز</Text>
         </View>
 
         {/* Metric 3 */}
         <View style={styles.metricCard}>
-          <Text style={styles.metricIcon}>🎯</Text>
+          <View style={styles.metricIconBox}>
+            <Target size={18} color="#10B981" strokeWidth={2.2} />
+          </View>
           <Text style={styles.metricValue}>{formatNumber(daysGoalReached)} روز</Text>
           <Text style={styles.metricLabel}>رسیدن به هدف کامل</Text>
         </View>
 
         {/* Metric 4 */}
         <View style={styles.metricCard}>
-          <Text style={styles.metricIcon}>🔥</Text>
+          <View style={styles.metricIconBox}>
+            <Flame size={18} color="#F97316" strokeWidth={2.2} />
+          </View>
           <Text style={styles.metricValue}>{formatNumber(streakDays)} روز</Text>
           <Text style={styles.metricLabel}>زنجیره پیوستگی فعال</Text>
         </View>
@@ -144,15 +154,20 @@ export function StatsScreen({ logs = [], goalGlasses = 8, streakDays = 1 }) {
       {/* 3. Total Consumption Banner */}
       <View style={styles.totalBanner}>
         <View style={styles.totalBannerContent}>
-          <Text style={styles.totalBannerTitle}>کل آب نوشیده شده تا کنون</Text>
+          <View style={styles.totalBannerBadge}>
+            <Sparkles size={12} color="#0284C7" />
+            <Text style={styles.totalBannerTitle}>کل آب نوشیده شده تا کنون</Text>
+          </View>
           <Text style={styles.totalBannerValue}>
             {formatNumber(Math.round(totalAllTimeMl / 1000))} لیتر ({formatGlasses(totalAllTimeGlasses)})
           </Text>
           <Text style={styles.totalBannerSub}>
-            بدنت برای این تعهد سلامتی ازت ممنونه! ✨
+            بدنت برای این تعهد سلامتی ازت ممنونه!
           </Text>
         </View>
-        <Text style={styles.totalBannerIcon}>💧</Text>
+        <View style={styles.totalBannerIconBox}>
+          <Droplet size={24} color="#2D9CFF" fill="#2D9CFF" />
+        </View>
       </View>
 
       <View style={{ height: 40 }} />
@@ -174,8 +189,13 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     marginBottom: 16,
   },
+  headerTitleWrapper: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+  },
   headerTitleText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
     color: '#1E293B',
     writingDirection: 'rtl',
@@ -200,7 +220,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   chartTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '800',
     color: '#1E293B',
     writingDirection: 'rtl',
@@ -241,7 +261,7 @@ const styles = StyleSheet.create({
     borderRadius: 11,
   },
   barDayLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     color: '#64748B',
     marginTop: 8,
@@ -267,17 +287,24 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-  metricIcon: {
-    fontSize: 24,
-    marginBottom: 4,
+  metricIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   metricValue: {
-    fontSize: 15,
+    fontSize: 14.5,
     fontWeight: '800',
     color: '#1E293B',
   },
   metricLabel: {
-    fontSize: 11,
+    fontSize: 10.5,
     color: '#64748B',
     marginTop: 2,
     textAlign: 'center',
@@ -298,25 +325,37 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     paddingLeft: 10,
   },
+  totalBannerBadge: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 4,
+  },
   totalBannerTitle: {
-    fontSize: 13,
+    fontSize: 11.5,
     fontWeight: '700',
     color: '#0066CC',
     writingDirection: 'rtl',
   },
   totalBannerValue: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '900',
     color: '#1E293B',
-    marginTop: 2,
+    marginTop: 3,
   },
   totalBannerSub: {
-    fontSize: 11,
+    fontSize: 10.5,
     color: '#64748B',
     marginTop: 2,
     writingDirection: 'rtl',
   },
-  totalBannerIcon: {
-    fontSize: 32,
+  totalBannerIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
   },
 });

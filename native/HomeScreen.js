@@ -5,49 +5,29 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Image,
 } from 'react-native';
+import { Droplet, Droplets, Sparkles, Bell, Trash2 } from 'lucide-react-native';
+import { CompactStreakBar } from './CompactStreakBar';
+import { ProgressRing } from './ProgressRing';
+import { CupSelector } from './CupSelector';
 import { formatNumber, formatGlasses, formatTime, relativeTimeFromNow } from './strings';
-import { getMascotMessage, MASCOT_EXPRESSIONS } from './mascot';
-
-const PRESET_CUPS = [
-  { id: 'cup-200', name: 'استکان', volumeMl: 200, glasses: 0.8, icon: '☕' },
-  { id: 'cup-250', name: 'لیوان استاندارد', volumeMl: 250, glasses: 1, icon: '🥛' },
-  { id: 'cup-300', name: 'ماگ بزرگ', volumeMl: 300, glasses: 1.2, icon: '🍵' },
-  { id: 'cup-500', name: 'بطری آب', volumeMl: 500, glasses: 2, icon: '🍶' },
-];
 
 export function HomeScreen({
-  todayGlasses,
-  goalGlasses,
-  todayLogs,
-  streakDays,
+  todayGlasses = 0,
+  goalGlasses = 8,
+  todayLogs = [],
+  streakDays = 1,
   onAddWater,
   onDeleteWater,
   onOpenCustomAmount,
 }) {
   const percentage = goalGlasses > 0 ? Math.min(Math.round((todayGlasses / goalGlasses) * 100), 100) : 0;
-  const isGoalReached = todayGlasses >= goalGlasses;
-  const remainingGlasses = Math.max(0, Math.round((goalGlasses - todayGlasses) * 10) / 10);
-  const totalMl = Math.round(todayGlasses * 250);
-  const goalMl = goalGlasses * 250;
+  const isGoalReached = todayGlasses >= goalGlasses && goalGlasses > 0;
 
-  // Calculate hours since last drink for mascot status
-  let hoursSinceLastDrink = 0;
-  if (todayLogs.length > 0) {
-    const lastTimestamp = new Date(todayLogs[0].loggedAt).getTime();
-    hoursSinceLastDrink = (Date.now() - lastTimestamp) / (1000 * 60 * 60);
-  }
-
-  const mascot = getMascotMessage(todayGlasses, goalGlasses, hoursSinceLastDrink);
-
-  // Pick mascot illustration based on state
-  let mascotImageSource = require('../src/assets/images/noosh_mascot_happy_1788352192771.png');
-  if (mascot.type === MASCOT_EXPRESSIONS.CELEBRATE) {
-    mascotImageSource = require('../src/assets/images/noosh_mascot_celebrate_1788352221766.png');
-  } else if (mascot.type === MASCOT_EXPRESSIONS.MISS_YOU) {
-    mascotImageSource = require('../src/assets/images/noosh_mascot_missyou_1788352208455.png');
-  }
+  // Calculate next reminder estimation (e.g. 1 hour after last drink or in 45 mins)
+  const now = new Date();
+  const nextReminder = new Date(now.getTime() + 60 * 60 * 1000);
+  const nextReminderTime = `${String(nextReminder.getHours()).padStart(2, '0')}:${String(nextReminder.getMinutes()).padStart(2, '0')}`;
 
   return (
     <ScrollView
@@ -55,158 +35,86 @@ export function HomeScreen({
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
     >
-      {/* 1. Mascot Care Speech Card */}
-      <View style={[styles.mascotCard, { backgroundColor: mascot.bg }]}>
-        <View style={styles.mascotSpeechSection}>
-          <View style={styles.mascotBadgeRow}>
-            <Text style={[styles.mascotBadgeText, { color: mascot.color }]}>
-              {mascot.badge}
-            </Text>
-          </View>
-          <Text style={styles.mascotQuoteText}>{mascot.quote}</Text>
-        </View>
+      {/* 1. Compact Streak Bar */}
+      <CompactStreakBar
+        streakDays={streakDays}
+        todayCompleted={isGoalReached}
+      />
 
-        {/* Mascot Avatar Image */}
-        <View style={styles.mascotImageWrapper}>
-          <Image
-            source={mascotImageSource}
-            style={styles.mascotImage}
-            resizeMode="contain"
-          />
-        </View>
-      </View>
-
-      {/* 2. Main Hydration Progress Card */}
+      {/* 2. Main Progress Ring Card */}
       <View style={styles.progressCard}>
-        {/* Percentage badge top row */}
-        <View style={styles.cardHeaderRow}>
-          <View
-            style={[
-              styles.percentageBadge,
-              isGoalReached ? styles.percentageBadgeSuccess : styles.percentageBadgeNormal,
-            ]}
-          >
-            <Text
-              style={[
-                styles.percentageText,
-                isGoalReached ? styles.percentageTextSuccess : styles.percentageTextNormal,
-              ]}
-            >
-              {formatNumber(percentage)}٪ تکمیل شده
-            </Text>
-          </View>
+        <ProgressRing
+          currentGlasses={todayGlasses}
+          goalGlasses={goalGlasses}
+        />
 
-          <Text style={styles.goalLabelText}>
-            هدف: {formatGlasses(goalGlasses)} ({formatNumber(goalMl)} میلی‌لیتر)
-          </Text>
-        </View>
-
-        {/* Central Illustrated Water Tank / Cup Gauge */}
-        <View style={styles.gaugeCenterContainer}>
-          <View style={styles.gaugeOuterRing}>
-            {/* Cup Vessel Silhouette */}
-            <View style={styles.cupVessel}>
-              <View
-                style={[
-                  styles.waterFill,
-                  {
-                    height: `${Math.min(Math.max(percentage, 8), 100)}%`,
-                    backgroundColor: isGoalReached ? '#10B981' : '#2D9CFF',
-                  },
-                ]}
-              >
-                {/* Surface wave reflection line */}
-                <View style={styles.waterSurfaceLine} />
-              </View>
-
-              {/* Glass shine highlight */}
-              <View style={styles.glassHighlight} />
+        {/* Daily Goal Banner Card */}
+        <View style={styles.goalBannerCard}>
+          <View style={styles.goalBannerLeft}>
+            <View style={styles.dropletIconBox}>
+              <Droplet size={16} color="#2D9CFF" fill="#2D9CFF" strokeWidth={2} />
             </View>
-
-            {/* Numbers in Gauge */}
-            <View style={styles.gaugeTextOverlay}>
-              <Text style={styles.gaugeMainNumber}>
-                {formatNumber(todayGlasses)}
+            <View style={styles.goalBannerTextWrapper}>
+              <Text style={styles.goalBannerTitle}>
+                هدف: {formatGlasses(goalGlasses)}
               </Text>
-              <Text style={styles.gaugeUnitText}>از {formatNumber(goalGlasses)} لیوان</Text>
-              <Text style={styles.gaugeMlText}>{formatNumber(totalMl)} میلی‌لیتر</Text>
+              <Text style={styles.goalBannerSubtitle}>
+                {formatNumber(goalGlasses * 250)} میلی‌لیتر در روز
+              </Text>
             </View>
           </View>
-        </View>
 
-        {/* Remaining info or completion celebration */}
-        <View style={styles.statusInfoRow}>
-          {isGoalReached ? (
-            <Text style={styles.completedStatusText}>
-              🎉 تبریک! هدف هیدراتاسیون امروزت تکمیل شد!
+          <View style={styles.goalBannerRight}>
+            <Sparkles size={14} color="#0284C7" />
+            <Text style={styles.goalBannerPercentage}>
+              {formatNumber(percentage)}٪
             </Text>
-          ) : (
-            <Text style={styles.remainingStatusText}>
-              💧 {formatGlasses(remainingGlasses)} دیگر تا هدف روزانه
-            </Text>
-          )}
-        </View>
-
-        {/* 2 Stat Highlight Pills */}
-        <View style={styles.statsPillRow}>
-          <View style={styles.statPill}>
-            <Text style={styles.statPillValue}>{formatGlasses(todayGlasses)}</Text>
-            <Text style={styles.statPillLabel}>مصرف امروز</Text>
           </View>
+        </View>
 
-          <View style={styles.statPill}>
-            <Text style={styles.statPillValue}>{formatNumber(streakDays)} روز 🔥</Text>
-            <Text style={styles.statPillLabel}>زنجیره پیوستگی</Text>
+        {/* Dynamic Reminder Alert Bar */}
+        <View style={styles.reminderBar}>
+          <View style={styles.reminderIconBox}>
+            <Bell size={13} color="#2D9CFF" strokeWidth={2.4} />
+          </View>
+          <View style={styles.reminderTextWrapper}>
+            <Text style={styles.reminderMainText}>
+              یادآور بعدی: {formatNumber(nextReminderTime)}
+            </Text>
+            <Text style={styles.reminderSubText}>
+              (تمدید خودکار با نوشیدن زودتر)
+            </Text>
           </View>
         </View>
       </View>
 
-      {/* 3. Quick Add Water Section */}
-      <View style={styles.sectionContainer}>
-        <View style={styles.sectionHeaderRow}>
-          <TouchableOpacity onPress={onOpenCustomAmount} activeOpacity={0.7}>
-            <Text style={styles.customAddButtonText}>+ مقدار دلخواه</Text>
-          </TouchableOpacity>
-          <Text style={styles.sectionTitleText}>ثبت سریع مصرف آب</Text>
-        </View>
-
-        {/* 4 Cups Grid */}
-        <View style={styles.cupsGrid}>
-          {PRESET_CUPS.map((cup) => (
-            <TouchableOpacity
-              key={cup.id}
-              style={styles.cupCard}
-              onPress={() => onAddWater(cup.glasses, cup.volumeMl)}
-              activeOpacity={0.75}
-            >
-              <Text style={styles.cupCardIcon}>{cup.icon}</Text>
-              <Text style={styles.cupCardName}>{cup.name}</Text>
-              <Text style={styles.cupCardVolume}>{formatNumber(cup.volumeMl)} ml</Text>
-              <View style={styles.cupCardAddTag}>
-                <Text style={styles.cupCardAddTagText}>+ {formatGlasses(cup.glasses)}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
+      {/* 3. Cup Selector with Quick Log & Multiplier */}
+      <CupSelector
+        onAddWater={onAddWater}
+        onOpenCustomAmount={onOpenCustomAmount}
+      />
 
       {/* 4. Today's Logs */}
-      <View style={styles.sectionContainer}>
+      <View style={styles.logsSection}>
         <View style={styles.sectionHeaderRow}>
           {todayLogs.length > 0 && (
-            <Text style={styles.logsCountBadge}>
-              {formatNumber(todayLogs.length)} ثبت
-            </Text>
+            <View style={styles.logsBadge}>
+              <Text style={styles.logsBadgeText}>
+                {formatNumber(todayLogs.length)} ثبت
+              </Text>
+            </View>
           )}
-          <Text style={styles.sectionTitleText}>گزارش امروز</Text>
+          <Text style={styles.sectionTitleText}>نوشیده‌های امروز</Text>
         </View>
 
         {todayLogs.length === 0 ? (
-          <View style={styles.emptyLogsCard}>
-            <Text style={styles.emptyLogsIcon}>💧</Text>
-            <Text style={styles.emptyLogsTitle}>امروز هنوز آبی ثبت نکردی</Text>
-            <Text style={styles.emptyLogsSubtitle}>
-              با زدن روی یکی از گزینه‌های بالا، اولین لیوانت رو بنوش و ثبت کن!
+          <View style={styles.emptyCard}>
+            <View style={styles.emptyIconBox}>
+              <Droplets size={26} color="#94A3B8" strokeWidth={1.8} />
+            </View>
+            <Text style={styles.emptyTitle}>هنوز آبی ثبت نکرده‌اید</Text>
+            <Text style={styles.emptySubtitle}>
+              با زدن روی یکی از اندازه‌های بالا، اولین لیوان خود را بنوشید و ثبت کنید!
             </Text>
           </View>
         ) : (
@@ -215,26 +123,26 @@ export function HomeScreen({
               <View key={log.id} style={styles.logItemRow}>
                 {/* Delete button */}
                 <TouchableOpacity
-                  style={styles.deleteLogButton}
+                  style={styles.deleteButton}
                   onPress={() => onDeleteWater(log.id)}
                   activeOpacity={0.6}
                 >
-                  <Text style={styles.deleteLogButtonText}>🗑️</Text>
+                  <Trash2 size={15} color="#EF4444" strokeWidth={2.2} />
                 </TouchableOpacity>
 
-                {/* Log details */}
-                <View style={styles.logItemDetails}>
-                  <Text style={styles.logItemAmount}>
+                {/* Amount and Time */}
+                <View style={styles.logDetails}>
+                  <Text style={styles.logAmount}>
                     {formatGlasses(log.amountGlasses || 1)} ({formatNumber(log.amountMl || 250)} میلی‌لیتر)
                   </Text>
-                  <Text style={styles.logItemTime}>
+                  <Text style={styles.logTime}>
                     {formatTime(log.loggedAt)} ({relativeTimeFromNow(log.loggedAt)})
                   </Text>
                 </View>
 
-                {/* Drop Icon */}
-                <View style={styles.logItemIconBox}>
-                  <Text style={styles.logItemIcon}>💧</Text>
+                {/* Droplet icon container */}
+                <View style={styles.logIconBox}>
+                  <Droplet size={15} color="#2D9CFF" fill="#2D9CFF" />
                 </View>
               </View>
             ))}
@@ -242,7 +150,7 @@ export function HomeScreen({
         )}
       </View>
 
-      <View style={{ height: 40 }} />
+      <View style={{ height: 30 }} />
     </ScrollView>
   );
 }
@@ -257,222 +165,114 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 24,
   },
-  // Mascot speech card
-  mascotCard: {
-    flexDirection: 'row-reverse',
-    borderRadius: 20,
-    padding: 14,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(45, 156, 255, 0.2)',
-    alignItems: 'center',
-    shadowColor: '#2D9CFF',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 1,
-  },
-  mascotSpeechSection: {
-    flex: 1,
-    paddingLeft: 10,
-    alignItems: 'flex-end',
-  },
-  mascotBadgeRow: {
-    marginBottom: 4,
-  },
-  mascotBadgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-    writingDirection: 'rtl',
-  },
-  mascotQuoteText: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: '#1E293B',
-    fontWeight: '600',
-    textAlign: 'right',
-    writingDirection: 'rtl',
-  },
-  mascotImageWrapper: {
-    width: 68,
-    height: 68,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  mascotImage: {
-    width: 64,
-    height: 64,
-  },
-
-  // Main progress card
   progressCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
-    padding: 18,
+    padding: 16,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    shadowColor: '#2D9CFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
     marginBottom: 16,
+    shadowColor: '#2D9CFF',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  cardHeaderRow: {
+  goalBannerCard: {
     flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
+    backgroundColor: '#F0F9FF',
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+    marginTop: 6,
+    marginBottom: 8,
   },
-  percentageBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  percentageBadgeNormal: {
-    backgroundColor: '#E6F4FF',
-  },
-  percentageBadgeSuccess: {
-    backgroundColor: '#ECFDF5',
-  },
-  percentageText: {
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  percentageTextNormal: {
-    color: '#0066CC',
-  },
-  percentageTextSuccess: {
-    color: '#10B981',
-  },
-  goalLabelText: {
-    fontSize: 12,
-    color: '#64748B',
-    fontWeight: '600',
-    writingDirection: 'rtl',
-  },
-
-  // Gauge Center Container
-  gaugeCenterContainer: {
+  goalBannerLeft: {
+    flexDirection: 'row-reverse',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
+    gap: 8,
   },
-  gaugeOuterRing: {
-    width: 170,
-    height: 170,
-    borderRadius: 85,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 8,
-    borderColor: '#E6F4FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  cupVessel: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    top: 0,
-    justifyContent: 'flex-end',
-  },
-  waterFill: {
-    width: '100%',
-    position: 'relative',
-  },
-  waterSurfaceLine: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 3,
+  dropletIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     backgroundColor: '#FFFFFF',
-    opacity: 0.4,
-  },
-  glassHighlight: {
-    position: 'absolute',
-    top: 15,
-    left: 20,
-    bottom: 25,
-    width: 3,
-    borderRadius: 2,
-    backgroundColor: '#FFFFFF',
-    opacity: 0.45,
-  },
-  gaugeTextOverlay: {
-    alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10,
-  },
-  gaugeMainNumber: {
-    fontSize: 34,
-    fontWeight: '900',
-    color: '#0F172A',
-  },
-  gaugeUnitText: {
-    fontSize: 12,
-    color: '#334155',
-    fontWeight: '700',
-    marginTop: -2,
-  },
-  gaugeMlText: {
-    fontSize: 11,
-    color: '#64748B',
-    fontWeight: '600',
-    marginTop: 2,
-  },
-
-  // Status Info Row
-  statusInfoRow: {
-    alignItems: 'center',
-    marginVertical: 12,
-  },
-  completedStatusText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#10B981',
-    textAlign: 'center',
-    writingDirection: 'rtl',
-  },
-  remainingStatusText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0284C7',
-    textAlign: 'center',
-    writingDirection: 'rtl',
-  },
-
-  // Stats Pill Row
-  statsPillRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 4,
-  },
-  statPill: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 14,
-    paddingVertical: 10,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: '#BAE6FD',
   },
-  statPillValue: {
-    fontSize: 15,
+  goalBannerTextWrapper: {
+    alignItems: 'flex-end',
+  },
+  goalBannerTitle: {
+    fontSize: 12.5,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#0369A1',
+    writingDirection: 'rtl',
   },
-  statPillLabel: {
-    fontSize: 11,
+  goalBannerSubtitle: {
+    fontSize: 10,
     color: '#64748B',
-    marginTop: 2,
-    fontWeight: '500',
+    marginTop: 1,
+    writingDirection: 'rtl',
   },
-
-  // Section styling
-  sectionContainer: {
+  goalBannerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+  },
+  goalBannerPercentage: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#0284C7',
+  },
+  reminderBar: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  reminderIconBox: {
+    width: 24,
+    height: 24,
+    borderRadius: 7,
+    backgroundColor: '#E6F4FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  reminderTextWrapper: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 4,
+    flex: 1,
+  },
+  reminderMainText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#334155',
+    writingDirection: 'rtl',
+  },
+  reminderSubText: {
+    fontSize: 9.5,
+    color: '#94A3B8',
+    writingDirection: 'rtl',
+  },
+  logsSection: {
     marginBottom: 16,
   },
   sectionHeaderRow: {
@@ -482,78 +282,23 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionTitleText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '800',
     color: '#1E293B',
     writingDirection: 'rtl',
   },
-  customAddButtonText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#2D9CFF',
-  },
-  logsCountBadge: {
-    fontSize: 11,
-    color: '#64748B',
+  logsBadge: {
     backgroundColor: '#E2E8F0',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
+  },
+  logsBadgeText: {
+    fontSize: 10.5,
     fontWeight: '700',
+    color: '#475569',
   },
-
-  // Cups Grid
-  cupsGrid: {
-    flexDirection: 'row-reverse',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  cupCard: {
-    flexBasis: '48%',
-    flexGrow: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  cupCardIcon: {
-    fontSize: 26,
-    marginBottom: 4,
-  },
-  cupCardName: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#1E293B',
-    textAlign: 'center',
-    writingDirection: 'rtl',
-  },
-  cupCardVolume: {
-    fontSize: 11,
-    color: '#64748B',
-    marginTop: 2,
-  },
-  cupCardAddTag: {
-    marginTop: 8,
-    backgroundColor: '#E6F4FF',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  cupCardAddTagText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#0066CC',
-  },
-
-  // Logs list
-  emptyLogsCard: {
+  emptyCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 18,
     padding: 24,
@@ -561,23 +306,29 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
-  emptyLogsIcon: {
-    fontSize: 32,
-    marginBottom: 8,
+  emptyIconBox: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
   },
-  emptyLogsTitle: {
-    fontSize: 14,
-    fontWeight: '700',
+  emptyTitle: {
+    fontSize: 13.5,
+    fontWeight: '800',
     color: '#1E293B',
     marginBottom: 4,
     writingDirection: 'rtl',
   },
-  emptyLogsSubtitle: {
-    fontSize: 12,
+  emptySubtitle: {
+    fontSize: 11.5,
     color: '#64748B',
     textAlign: 'center',
     lineHeight: 18,
     writingDirection: 'rtl',
+    maxWidth: 260,
   },
   logsListCard: {
     backgroundColor: '#FFFFFF',
@@ -595,38 +346,33 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
   },
-  deleteLogButton: {
+  deleteButton: {
     padding: 6,
+    borderRadius: 8,
   },
-  deleteLogButtonText: {
-    fontSize: 14,
-  },
-  logItemDetails: {
+  logDetails: {
     flex: 1,
     alignItems: 'flex-end',
     marginRight: 10,
   },
-  logItemAmount: {
-    fontSize: 13,
+  logAmount: {
+    fontSize: 12.5,
     fontWeight: '700',
     color: '#1E293B',
     writingDirection: 'rtl',
   },
-  logItemTime: {
-    fontSize: 11,
+  logTime: {
+    fontSize: 10.5,
     color: '#64748B',
     marginTop: 2,
     writingDirection: 'rtl',
   },
-  logItemIconBox: {
-    width: 34,
-    height: 34,
+  logIconBox: {
+    width: 32,
+    height: 32,
     borderRadius: 10,
     backgroundColor: '#E6F4FF',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  logItemIcon: {
-    fontSize: 16,
   },
 });

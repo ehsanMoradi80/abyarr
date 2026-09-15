@@ -1,17 +1,21 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Image } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { Trophy, Bell, Settings } from 'lucide-react-native';
+import { AppLogo } from './AppLogo';
 
-export function Header({ title, subtitle, onOpenBadges, onOpenReminders, streakDays = 1 }) {
+export function Header({
+  title = 'سلام!',
+  subtitle = 'نوشیدن آب، یادآوری عشق به خودت',
+  onOpenBadges,
+  onOpenReminders,
+  onOpenSettings,
+}) {
   return (
     <View style={styles.headerContainer}>
-      <View style={styles.rightSection}>
-        {/* Compact, elegant App Logo (Not oversized) */}
-        <View style={styles.logoBadge}>
-          <Image
-            source={require('../public/icon.png')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
+      {/* Brand & Greeting Section */}
+      <View style={styles.brandSection}>
+        <View style={styles.logoWrapper}>
+          <AppLogo size={32} showHeart={true} />
         </View>
 
         <View style={styles.titleWrapper}>
@@ -20,32 +24,35 @@ export function Header({ title, subtitle, onOpenBadges, onOpenReminders, streakD
         </View>
       </View>
 
-      <View style={styles.leftSection}>
-        {/* Streak counter badge */}
-        <View style={styles.streakBadge}>
-          <Text style={styles.streakIcon}>🔥</Text>
-          <Text style={styles.streakText}>{streakDays}</Text>
-        </View>
-
-        {/* Badges action */}
+      {/* Action Buttons */}
+      <View style={styles.actionsSection}>
         {onOpenBadges && (
           <TouchableOpacity
-            style={styles.actionButton}
+            style={styles.actionBtn}
             onPress={onOpenBadges}
             activeOpacity={0.7}
           >
-            <Text style={styles.actionButtonIcon}>🏆</Text>
+            <Trophy size={17} color="#64748B" strokeWidth={2.2} />
           </TouchableOpacity>
         )}
 
-        {/* Reminders action */}
         {onOpenReminders && (
           <TouchableOpacity
-            style={styles.actionButton}
+            style={styles.actionBtn}
             onPress={onOpenReminders}
             activeOpacity={0.7}
           >
-            <Text style={styles.actionButtonIcon}>🔔</Text>
+            <Bell size={17} color="#64748B" strokeWidth={2.2} />
+          </TouchableOpacity>
+        )}
+
+        {onOpenSettings && (
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={onOpenSettings}
+            activeOpacity={0.7}
+          >
+            <Settings size={17} color="#64748B" strokeWidth={2.2} />
           </TouchableOpacity>
         )}
       </View>
@@ -59,80 +66,57 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 14,
+    paddingTop: 8,
+    paddingBottom: 12,
     backgroundColor: '#F2F6FA',
   },
-  rightSection: {
+  brandSection: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 10,
     flex: 1,
   },
-  // Compact, balanced logo sizing (34x34) to avoid being too large
-  logoBadge: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+  logoWrapper: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#2D9CFF',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    elevation: 2,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-  },
-  logoImage: {
-    width: 24,
-    height: 24,
+    shadowColor: '#2D9CFF',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 1,
   },
   titleWrapper: {
     alignItems: 'flex-end',
     justifyContent: 'center',
+    flex: 1,
   },
   titleText: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
     color: '#1E293B',
     writingDirection: 'rtl',
   },
   subtitleText: {
-    fontSize: 11,
+    fontSize: 10.5,
     color: '#64748B',
-    marginTop: 2,
+    marginTop: 1,
     fontWeight: '500',
     writingDirection: 'rtl',
   },
-  leftSection: {
+  actionsSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
-  streakBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEF3C7',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#FDE68A',
-    gap: 4,
-  },
-  streakIcon: {
-    fontSize: 13,
-  },
-  streakText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#B45309',
-  },
-  actionButton: {
-    width: 34,
-    height: 34,
+  actionBtn: {
+    width: 36,
+    height: 36,
     borderRadius: 12,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
@@ -141,11 +125,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.04,
     shadowRadius: 2,
     elevation: 1,
-  },
-  actionButtonIcon: {
-    fontSize: 15,
   },
 });

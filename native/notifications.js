@@ -21,10 +21,10 @@ export async function scheduleWaterReminder(intervalMinutes = 60, userName = '')
     const Notifications = await import('expo-notifications');
     await Notifications.cancelAllScheduledNotificationsAsync();
 
-    const title = '💧 وقت نوشیدن آب!';
+    const title = 'وقت نوشیدن آب!';
     const body = userName
-      ? `${userName} عزیز، وقت نوشیدن یک لیوان آب خنک است 💧`
-      : 'یک لیوان آب تازه برای سلامتی و شادابیت بنوش!';
+      ? `${userName} عزیز، وقت نوشیدن یک لیوان آب خنک و تازه است.`
+      : 'یک لیوان آب تازه برای سلامتی و شادابی بنوشید!';
 
     await Notifications.scheduleNotificationAsync({
       content: {

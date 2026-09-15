@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
 } from 'react-native';
+import { Plus } from 'lucide-react-native';
 import { formatNumber } from './strings';
 
 export function CustomAmountModal({ visible, onClose, onAddCustom }) {
@@ -34,7 +35,7 @@ export function CustomAmountModal({ visible, onClose, onAddCustom }) {
         <View style={styles.modalContainer}>
           <Text style={styles.modalTitle}>ثبت مقدار دلخواه آب</Text>
           <Text style={styles.modalSubtitle}>
-            میزان آبی که نوشیده‌ای را به میلی‌لیتر وارد کن:
+            میزان آبی که نوشیده‌اید را به میلی‌لیتر وارد کنید:
           </Text>
 
           {/* Input field */}
@@ -89,7 +90,10 @@ export function CustomAmountModal({ visible, onClose, onAddCustom }) {
               onPress={handleConfirm}
               activeOpacity={0.8}
             >
-              <Text style={styles.confirmButtonText}>ثبت نوشیدن 💧</Text>
+              <View style={styles.confirmButtonContent}>
+                <Plus size={15} color="#FFFFFF" strokeWidth={2.8} />
+                <Text style={styles.confirmButtonText}>ثبت نوشیدن</Text>
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -210,6 +214,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 2,
+  },
+  confirmButtonContent: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 4,
   },
   confirmButtonText: {
     fontSize: 13,

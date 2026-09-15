@@ -13,9 +13,9 @@ export function getMascotMessage(todayGlasses, goalGlasses, hoursSinceLastDrink 
   if (ratio >= 1) {
     return {
       type: MASCOT_EXPRESSIONS.CELEBRATE,
-      badge: 'قهرمان آب 🎉',
-      title: 'فوق‌العاده‌ای!',
-      quote: 'هورا! به هدف امروزت رسیدی! بدنت الان کاملاً شاداب و سرزنده‌ست ✨💧',
+      badge: 'قهرمان آب',
+      title: 'فوق‌العاده‌اید!',
+      quote: 'به هدف امروزتان رسیدید! بدنتان اکنون کاملاً شاداب و سرزنده‌ است.',
       color: '#10B981',
       bg: '#ECFDF5',
     };
@@ -24,9 +24,9 @@ export function getMascotMessage(todayGlasses, goalGlasses, hoursSinceLastDrink 
   if (hoursSinceLastDrink >= 2.5 && todayGlasses > 0) {
     return {
       type: MASCOT_EXPRESSIONS.MISS_YOU,
-      badge: 'دلتنگ آب 🥺',
-      title: 'یه جرعه عشق...',
-      quote: 'خیلی وقته منتظرتم بیای آب بنوشی! سلول‌های بدنت الان به آب نیاز دارن 💙',
+      badge: 'دلتنگ آب',
+      title: 'یک جرعه سلامتی...',
+      quote: 'سلول‌های بدنتان اکنون به آب گوارا نیاز دارند.',
       color: '#0284C7',
       bg: '#E0F2FE',
     };
@@ -35,9 +35,9 @@ export function getMascotMessage(todayGlasses, goalGlasses, hoursSinceLastDrink 
   if (ratio >= 0.6) {
     return {
       type: MASCOT_EXPRESSIONS.ENERGIZED,
-      badge: 'پرانرژی و نزدیک هدف 🚀',
-      title: 'عالی پیش رفتی!',
-      quote: 'بیشتر از نصف مسیر رو رفتی، فقط چند لیوان دیگه تا درخشش کامل بدنت باقی مونده!',
+      badge: 'پرانرژی و نزدیک هدف',
+      title: 'عالی پیش رفتید!',
+      quote: 'بیشتر از نصف مسیر را رفته‌اید، فقط چند لیوان دیگر تا تکمیل هدف باقی مانده است.',
       color: '#2563EB',
       bg: '#EFF6FF',
     };
@@ -45,9 +45,9 @@ export function getMascotMessage(todayGlasses, goalGlasses, hoursSinceLastDrink 
 
   return {
     type: MASCOT_EXPRESSIONS.HAPPY,
-    badge: 'همراه شاداب تو 🌊',
+    badge: 'همراه شاداب شما',
     title: 'سلام دوست من!',
-    quote: 'نوشیدن آب، قشنگ‌ترین یادآوری عشق به خودته. آماده‌ای امروز بدنت رو پرانرژی نگه داریم؟',
+    quote: 'نوشیدن آب، قشنگ‌ترین یادآوری عشق به خودتان است.',
     color: '#2D9CFF',
     bg: '#E6F4FF',
   };

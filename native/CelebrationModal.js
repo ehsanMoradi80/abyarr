@@ -5,8 +5,8 @@ import {
   Text,
   Modal,
   TouchableOpacity,
-  Image,
 } from 'react-native';
+import { Trophy, Sparkles, Flame, Check } from 'lucide-react-native';
 import { formatNumber, formatGlasses } from './strings';
 
 export function CelebrationModal({ visible, goalGlasses, streakDays, onClose }) {
@@ -19,26 +19,24 @@ export function CelebrationModal({ visible, goalGlasses, streakDays, onClose }) 
     >
       <View style={styles.modalOverlay}>
         <View style={styles.cardContainer}>
-          {/* Top celebratory emojis */}
-          <Text style={styles.topEmojis}>🎉 ✨ 💧 ✨ 🎊</Text>
-
-          {/* Celebrate Mascot Image */}
-          <View style={styles.mascotWrapper}>
-            <Image
-              source={require('../src/assets/images/noosh_mascot_celebrate_1788352221766.png')}
-              style={styles.mascotImage}
-              resizeMode="contain"
-            />
+          {/* Top Decorative Vector Icon */}
+          <View style={styles.trophyWrapper}>
+            <View style={styles.trophyBackdrop}>
+              <Trophy size={46} color="#EAB308" strokeWidth={2.2} fill="#FEF08A" />
+            </View>
+            <View style={styles.sparkleFloating}>
+              <Sparkles size={16} color="#2D9CFF" />
+            </View>
           </View>
 
           <Text style={styles.celebrationTitle}>هدف امروز کامل شد!</Text>
           <Text style={styles.celebrationSubtitle}>
-            تبریک! تو با موفقیت {formatGlasses(goalGlasses)} آب نوشیدی و به بدنت نشاط و زندگی هدیه دادی.
+            تبریک! شما با موفقیت {formatGlasses(goalGlasses)} آب نوشیدید و به بدنتان نشاط و سلامتی هدیه دادید.
           </Text>
 
           {/* Streak Badge */}
           <View style={styles.streakBadge}>
-            <Text style={styles.streakIcon}>🔥</Text>
+            <Flame size={18} color="#EA580C" strokeWidth={2.4} fill="#EA580C" />
             <Text style={styles.streakText}>
               زنجیره پیوستگی: {formatNumber(streakDays)} روز متوالی!
             </Text>
@@ -50,7 +48,10 @@ export function CelebrationModal({ visible, goalGlasses, streakDays, onClose }) 
             onPress={onClose}
             activeOpacity={0.8}
           >
-            <Text style={styles.continueButtonText}>ادامه دادن به شادابی 🌊</Text>
+            <View style={styles.continueButtonContent}>
+              <Check size={16} color="#FFFFFF" strokeWidth={3} />
+              <Text style={styles.continueButtonText}>ادامه دادن به شادابی</Text>
+            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -79,31 +80,39 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     elevation: 8,
   },
-  topEmojis: {
-    fontSize: 20,
-    marginBottom: 10,
-    letterSpacing: 4,
+  trophyWrapper: {
+    position: 'relative',
+    marginBottom: 16,
   },
-  mascotWrapper: {
-    width: 100,
-    height: 100,
+  trophyBackdrop: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: '#FEF9C3',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: '#FEF08A',
   },
-  mascotImage: {
-    width: 90,
-    height: 90,
+  sparkleFloating: {
+    position: 'absolute',
+    top: 0,
+    right: -4,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 3,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
   },
   celebrationTitle: {
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: '900',
     color: '#0F172A',
-    marginBottom: 8,
+    marginBottom: 6,
     writingDirection: 'rtl',
   },
   celebrationSubtitle: {
-    fontSize: 13,
+    fontSize: 12.5,
     color: '#475569',
     textAlign: 'center',
     lineHeight: 20,
@@ -111,30 +120,27 @@ const styles = StyleSheet.create({
     writingDirection: 'rtl',
   },
   streakBadge: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
-    backgroundColor: '#FEF3C7',
+    backgroundColor: '#FFF7ED',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: '#FFEDD5',
     marginBottom: 20,
     gap: 6,
   },
-  streakIcon: {
-    fontSize: 16,
-  },
   streakText: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '800',
-    color: '#B45309',
+    color: '#9A3412',
     writingDirection: 'rtl',
   },
   continueButton: {
     backgroundColor: '#10B981',
     width: '100%',
-    paddingVertical: 14,
+    paddingVertical: 13,
     borderRadius: 16,
     alignItems: 'center',
     shadowColor: '#10B981',
@@ -143,9 +149,14 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
+  continueButtonContent: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+  },
   continueButtonText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '800',
   },
 });

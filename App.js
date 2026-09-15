@@ -7,6 +7,7 @@ import {
   StatusBar,
   TouchableOpacity,
 } from 'react-native';
+import { Home, History, BarChart3, Settings, Plus } from 'lucide-react-native';
 
 import { Header } from './native/Header';
 import { HomeScreen } from './native/HomeScreen';
@@ -20,7 +21,6 @@ import { BadgesModal } from './native/BadgesModal';
 import {
   loadAppData,
   saveAppData,
-  filterTodayLogs,
   calculateDailyStats,
 } from './native/storage';
 import {
@@ -154,11 +154,11 @@ export default function App() {
       <View style={styles.appContainer}>
         {/* Header (with compact logo, greeting, and actions) */}
         <Header
-          title={userName ? `سلام ${userName}! 🌊` : 'سلام! 🌊'}
+          title={userName ? `سلام ${userName}!` : 'سلام!'}
           subtitle="نوشیدن آب، یادآوری عشق به خودت"
-          streakDays={streakDays}
           onOpenBadges={() => setShowBadgesModal(true)}
           onOpenReminders={() => setActiveTab('settings')}
+          onOpenSettings={() => setActiveTab('settings')}
         />
 
         {/* Tab Content Views */}
@@ -213,7 +213,11 @@ export default function App() {
               activeOpacity={0.7}
             >
               <View style={[styles.navIconBox, activeTab === 'home' && styles.navIconBoxActive]}>
-                <Text style={styles.navIcon}>🏠</Text>
+                <Home
+                  size={20}
+                  color={activeTab === 'home' ? '#2D9CFF' : '#64748B'}
+                  strokeWidth={activeTab === 'home' ? 2.5 : 2}
+                />
               </View>
               <Text style={[styles.navLabel, activeTab === 'home' && styles.navLabelActive]}>
                 خانه
@@ -227,7 +231,11 @@ export default function App() {
               activeOpacity={0.7}
             >
               <View style={[styles.navIconBox, activeTab === 'history' && styles.navIconBoxActive]}>
-                <Text style={styles.navIcon}>📜</Text>
+                <History
+                  size={20}
+                  color={activeTab === 'history' ? '#2D9CFF' : '#64748B'}
+                  strokeWidth={activeTab === 'history' ? 2.5 : 2}
+                />
               </View>
               <Text style={[styles.navLabel, activeTab === 'history' && styles.navLabelActive]}>
                 تاریخچه
@@ -241,7 +249,7 @@ export default function App() {
                 onPress={() => handleAddWater(1, 250)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.floatingButtonPlus}>+</Text>
+                <Plus size={22} color="#FFFFFF" strokeWidth={3} />
                 <Text style={styles.floatingButtonSub}>۱ لیوان</Text>
               </TouchableOpacity>
             </View>
@@ -253,7 +261,11 @@ export default function App() {
               activeOpacity={0.7}
             >
               <View style={[styles.navIconBox, activeTab === 'stats' && styles.navIconBoxActive]}>
-                <Text style={styles.navIcon}>📊</Text>
+                <BarChart3
+                  size={20}
+                  color={activeTab === 'stats' ? '#2D9CFF' : '#64748B'}
+                  strokeWidth={activeTab === 'stats' ? 2.5 : 2}
+                />
               </View>
               <Text style={[styles.navLabel, activeTab === 'stats' && styles.navLabelActive]}>
                 گزارش
@@ -267,7 +279,11 @@ export default function App() {
               activeOpacity={0.7}
             >
               <View style={[styles.navIconBox, activeTab === 'settings' && styles.navIconBoxActive]}>
-                <Text style={styles.navIcon}>⚙️</Text>
+                <Settings
+                  size={20}
+                  color={activeTab === 'settings' ? '#2D9CFF' : '#64748B'}
+                  strokeWidth={activeTab === 'settings' ? 2.5 : 2}
+                />
               </View>
               <Text style={[styles.navLabel, activeTab === 'settings' && styles.navLabelActive]}>
                 تنظیمات
@@ -321,7 +337,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
-    paddingBottom: 6,
+    paddingBottom: 8,
     paddingTop: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
@@ -346,9 +362,6 @@ const styles = StyleSheet.create({
   },
   navIconBoxActive: {
     backgroundColor: '#E6F4FF',
-  },
-  navIcon: {
-    fontSize: 18,
   },
   navLabel: {
     fontSize: 11,
@@ -383,14 +396,8 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 5,
   },
-  floatingButtonPlus: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#FFFFFF',
-    lineHeight: 24,
-  },
   floatingButtonSub: {
-    fontSize: 9,
+    fontSize: 8.5,
     fontWeight: '800',
     color: '#E0F2FE',
     marginTop: -2,

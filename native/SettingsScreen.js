@@ -8,8 +8,9 @@ import {
   TextInput,
   Switch,
   Alert,
-  Image,
 } from 'react-native';
+import { Settings, Check, RotateCcw, Save } from 'lucide-react-native';
+import { AppLogo } from './AppLogo';
 import { formatNumber, formatGlasses } from './strings';
 
 const GOAL_OPTIONS = [6, 8, 10, 12];
@@ -58,7 +59,10 @@ export function SettingsScreen({
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.headerRow}>
-        <Text style={styles.headerTitleText}>تنظیمات و مشخصات</Text>
+        <View style={styles.headerTitleWrapper}>
+          <Settings size={17} color="#2D9CFF" strokeWidth={2.2} />
+          <Text style={styles.headerTitleText}>تنظیمات و مشخصات</Text>
+        </View>
       </View>
 
       {/* 1. App Profile Card */}
@@ -79,7 +83,7 @@ export function SettingsScreen({
       {/* 2. Daily Goal Card */}
       <View style={styles.card}>
         <Text style={styles.cardSectionTitle}>هدف روزانه مصرف آب</Text>
-        <Text style={styles.inputLabel}>چند لیوان آب در روز می‌خواهی بنوشی؟</Text>
+        <Text style={styles.inputLabel}>چند لیوان آب در روز می‌خواهید بنوشید؟</Text>
 
         <View style={styles.optionsRow}>
           {GOAL_OPTIONS.map((g) => {
@@ -144,13 +148,20 @@ export function SettingsScreen({
 
       {/* 4. Save Button */}
       <TouchableOpacity
-        style={styles.saveButton}
+        style={[styles.saveButton, savedSuccess && styles.saveButtonSuccess]}
         onPress={handleSave}
         activeOpacity={0.8}
       >
-        <Text style={styles.saveButtonText}>
-          {savedSuccess ? '✅ با موفقیت ذخیره شد' : '💾 ذخیره تغییرات'}
-        </Text>
+        <View style={styles.buttonContent}>
+          {savedSuccess ? (
+            <Check size={16} color="#FFFFFF" strokeWidth={3} />
+          ) : (
+            <Save size={16} color="#FFFFFF" strokeWidth={2.4} />
+          )}
+          <Text style={styles.saveButtonText}>
+            {savedSuccess ? 'با موفقیت ذخیره شد' : 'ذخیره تغییرات'}
+          </Text>
+        </View>
       </TouchableOpacity>
 
       {/* 5. Reset Today's Water Button */}
@@ -159,19 +170,18 @@ export function SettingsScreen({
         onPress={handleResetPress}
         activeOpacity={0.8}
       >
-        <Text style={styles.resetButtonText}>🔄 صفر کردن مصرف امروز</Text>
+        <View style={styles.buttonContent}>
+          <RotateCcw size={15} color="#DC2626" strokeWidth={2.4} />
+          <Text style={styles.resetButtonText}>صفر کردن مصرف امروز</Text>
+        </View>
       </TouchableOpacity>
 
-      {/* 6. Compact App Branding Footer (Logo neatly sized, not oversized) */}
+      {/* 6. App Branding Footer */}
       <View style={styles.footerBrandCard}>
         <View style={styles.footerLogoWrapper}>
-          <Image
-            source={require('../public/icon.png')}
-            style={styles.footerLogoImage}
-            resizeMode="contain"
-          />
+          <AppLogo size={32} showHeart={true} />
         </View>
-        <Text style={styles.footerAppName}>نوش | Abyar</Text>
+        <Text style={styles.footerAppName}>نوش | Noosh</Text>
         <Text style={styles.footerTagline}>نوشیدن آب، یادآوری عشق به خودت</Text>
         <Text style={styles.footerVersion}>نسخه ۱.۰.۰ • React Native بومی</Text>
       </View>
@@ -195,8 +205,13 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     marginBottom: 16,
   },
+  headerTitleWrapper: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+  },
   headerTitleText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
     color: '#1E293B',
     writingDirection: 'rtl',
@@ -215,7 +230,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   cardSectionTitle: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '800',
     color: '#1E293B',
     marginBottom: 8,
@@ -223,7 +238,7 @@ const styles = StyleSheet.create({
     writingDirection: 'rtl',
   },
   inputLabel: {
-    fontSize: 12,
+    fontSize: 11.5,
     color: '#64748B',
     marginBottom: 8,
     textAlign: 'right',
@@ -237,7 +252,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    fontSize: 14,
+    fontSize: 13.5,
     color: '#1E293B',
     textAlign: 'right',
   },
@@ -263,7 +278,7 @@ const styles = StyleSheet.create({
     borderColor: '#2D9CFF',
   },
   optionPillText: {
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: '700',
     color: '#475569',
   },
@@ -272,7 +287,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   optionPillSub: {
-    fontSize: 10,
+    fontSize: 9.5,
     color: '#94A3B8',
     marginTop: 2,
   },
@@ -290,13 +305,13 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   switchTitle: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '700',
     color: '#1E293B',
     writingDirection: 'rtl',
   },
   switchSubtitle: {
-    fontSize: 11,
+    fontSize: 10.5,
     color: '#64748B',
     marginTop: 2,
     writingDirection: 'rtl',
@@ -310,18 +325,26 @@ const styles = StyleSheet.create({
   saveButton: {
     backgroundColor: '#2D9CFF',
     borderRadius: 16,
-    paddingVertical: 14,
+    paddingVertical: 13,
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
     shadowColor: '#2D9CFF',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  saveButtonSuccess: {
+    backgroundColor: '#10B981',
+  },
+  buttonContent: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
   },
   saveButtonText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '800',
   },
   resetButton: {
@@ -329,29 +352,27 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FCA5A5',
     borderRadius: 16,
-    paddingVertical: 12,
+    paddingVertical: 11,
     alignItems: 'center',
     marginBottom: 20,
   },
   resetButtonText: {
     color: '#DC2626',
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '700',
   },
-
-  // Compact Footer Brand Card (Logo sized properly: 36x36)
   footerBrandCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    padding: 20,
+    padding: 18,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
   footerLogoWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     backgroundColor: '#F0F9FF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -359,23 +380,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#BAE6FD',
   },
-  footerLogoImage: {
-    width: 26,
-    height: 26,
-  },
   footerAppName: {
     fontSize: 15,
     fontWeight: '800',
     color: '#0F172A',
   },
   footerTagline: {
-    fontSize: 12,
+    fontSize: 11.5,
     color: '#64748B',
-    marginTop: 3,
+    marginTop: 2,
   },
   footerVersion: {
     fontSize: 10,
     color: '#94A3B8',
-    marginTop: 6,
+    marginTop: 5,
   },
 });
