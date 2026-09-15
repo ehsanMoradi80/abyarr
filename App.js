@@ -3,9 +3,10 @@ import {
   StyleSheet,
   View,
   Text,
-  SafeAreaView,
   StatusBar,
   TouchableOpacity,
+  Platform,
+  Dimensions,
 } from 'react-native';
 import { Home, History, BarChart3, Settings, Plus } from 'lucide-react-native';
 
@@ -146,12 +147,25 @@ export default function App() {
     }
   }, []);
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F2F6FA" />
+  // Safe area insets calculation for Android (Notch, selfie punch-hole, and navigation bar)
+  const screenDimensions = Dimensions.get('screen');
+  const windowDimensions = Dimensions.get('window');
+  const androidStatusBar = StatusBar.currentHeight || 36;
+  const topInset = Platform.OS === 'android' ? androidStatusBar : 0;
+  const navBarDifference = Math.max(screenDimensions.height - windowDimensions.height, 0);
+  // Guarantee safe distance above 3-button navbar (~48dp) or gesture bar (~28-32dp)
+  const bottomInset = Platform.OS === 'android' ? Math.max(navBarDifference, 32) : 16;
 
-      {/* Main App Container */}
-      <View style={styles.appContainer}>
+  return (
+    <View style={styles.safeArea}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent={true}
+      />
+
+      {/* Main App Container with safe padding for status bar and selfie camera */}
+      <View style={[styles.appContainer, { paddingTop: topInset }]}>
         {/* Header (with compact logo, greeting, and actions) */}
         <Header
           title={userName ? `سلام ${userName}!` : 'سلام!'}
@@ -169,6 +183,7 @@ export default function App() {
               goalGlasses={goalGlasses}
               todayLogs={todayLogs}
               streakDays={streakDays}
+              userName={userName}
               onAddWater={handleAddWater}
               onDeleteWater={handleDeleteWater}
               onOpenCustomAmount={() => setShowCustomAmountModal(true)}
@@ -203,8 +218,8 @@ export default function App() {
           )}
         </View>
 
-        {/* Bottom Navigation Bar */}
-        <View style={styles.bottomNavContainer}>
+        {/* Bottom Navigation Bar with safe bottom padding for Android navigation bar */}
+        <View style={[styles.bottomNavContainer, { paddingBottom: bottomInset + 8 }]}>
           <View style={styles.bottomNavContent}>
             {/* Tab 1: Home */}
             <TouchableOpacity
@@ -315,7 +330,7 @@ export default function App() {
         streakDays={streakDays}
         onClose={() => setShowBadgesModal(false)}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 

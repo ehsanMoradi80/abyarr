@@ -170,7 +170,7 @@ export const BrandScreenCard: React.FC<BrandScreenCardProps> = ({
             isDarkBlueWave ? 'text-[#E6F4FF]' : 'text-[#2D9CFF]'
           }`}
         >
-          💙
+          
         </span>
       </div>
     </motion.div>
@@ -274,7 +274,7 @@ export const BrandFullScreenModal: React.FC<BrandFullScreenModalProps> = ({
             >
               {config.slogan}
             </h2>
-            <div className="text-lg text-[#2D9CFF] font-bold">💙</div>
+            <div className="text-lg text-[#2D9CFF] font-bold"></div>
           </div>
 
           {/* Subtext and Benefit Card */}
@@ -294,7 +294,7 @@ export const BrandFullScreenModal: React.FC<BrandFullScreenModalProps> = ({
             </p>
             <div className="pt-1 flex items-center justify-between text-[11px] font-bold border-t border-white/10 dark:border-slate-800">
               <span className={isDarkBlueWave ? 'text-white' : 'text-[#2D9CFF]'}>
-                ✨ شرط کسب: {config.requirement}
+                 شرط کسب: {config.requirement}
               </span>
               <span className={isDarkBlueWave ? 'text-[#E6F4FF]' : 'text-[#10B981]'}>
                 +{formatNumber(config.xpPoints)} امتیاز قطره
@@ -305,7 +305,7 @@ export const BrandFullScreenModal: React.FC<BrandFullScreenModalProps> = ({
           {/* Progress / Status Bar */}
           <div className="w-full mt-3 space-y-1 z-10">
             <div className="flex items-center justify-between text-xs font-bold px-1">
-              <span>{isUnlocked ? 'وضعیت: باز شده 🎉' : 'پیشرفت تا باز شدن'}</span>
+              <span>{isUnlocked ? 'وضعیت: باز شده ' : 'پیشرفت تا باز شدن'}</span>
               <span>{isUnlocked ? '۱۰۰٪' : `${formatNumber(Math.round(progressPercent))}٪`}</span>
             </div>
             <div
@@ -339,7 +339,7 @@ export const BrandFullScreenModal: React.FC<BrandFullScreenModalProps> = ({
               }`}
             >
               <Sparkles className="w-4 h-4" />
-              <span>جشن و شادباش 💙</span>
+              <span>جشن و شادباش </span>
             </button>
 
             {onNext && (

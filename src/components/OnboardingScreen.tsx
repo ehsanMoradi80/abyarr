@@ -114,7 +114,7 @@ export const OnboardingScreen: React.FC = () => {
 
               <div className="space-y-1">
                 <h1 className="text-2xl font-black text-[#1E293B] dark:text-[#F8FAFC]">
-                  نوش 💙
+                  نوش 
                 </h1>
                 <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
                   یادآور و ردیاب هوشمند مصرف آب روزانه
@@ -137,15 +137,15 @@ export const OnboardingScreen: React.FC = () => {
 
               <div className="grid grid-cols-3 gap-2">
                 <div className="p-3 rounded-2xl bg-white dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] shadow-2xs">
-                  <span className="text-xl block mb-1">⚡</span>
+                  <span className="text-xl block mb-1"></span>
                   <span className="text-[11px] font-bold">ثبت با ۱ لمس</span>
                 </div>
                 <div className="p-3 rounded-2xl bg-white dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] shadow-2xs">
-                  <span className="text-xl block mb-1">🔔</span>
+                  <span className="text-xl block mb-1"></span>
                   <span className="text-[11px] font-bold">یادآور صوتی</span>
                 </div>
                 <div className="p-3 rounded-2xl bg-white dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] shadow-2xs">
-                  <span className="text-xl block mb-1">🏆</span>
+                  <span className="text-xl block mb-1"></span>
                   <span className="text-[11px] font-bold">نشان و انگیزه</span>
                 </div>
               </div>
@@ -296,7 +296,7 @@ export const OnboardingScreen: React.FC = () => {
                   <Sparkles className="w-6 h-6 text-[#F59E0B]" />
                 </div>
                 <h2 className="text-lg font-black text-[#1E293B] dark:text-[#F8FAFC]">
-                  آماده شروع سفر سلامتی! 🏆
+                  آماده شروع سفر سلامتی! 
                 </h2>
                 <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
                   با هر لیوان آب، نشان‌های افتخار را باز کنید

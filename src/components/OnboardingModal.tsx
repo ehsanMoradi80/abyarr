@@ -111,7 +111,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onFini
                     onClick={() => setStep(1)}
                     className="w-full h-12 rounded-2xl bg-[#2D9CFF] hover:bg-[#1E70E8] text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md shadow-[#2D9CFF]/25 active:scale-[0.98] cursor-pointer"
                   >
-                    <span>شروع کنیم 💙</span>
+                    <span>شروع کنیم </span>
                     <ArrowLeft className="w-4 h-4" />
                   </button>
                 </div>
@@ -138,7 +138,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onFini
                   <h2 className="text-lg font-black text-[#1E293B] dark:text-[#F8FAFC]">
                     هر قطره، یک قدم به سلامتی
                   </h2>
-                  <div className="text-sm font-bold text-[#2D9CFF]">💙</div>
+                  <div className="text-sm font-bold text-[#2D9CFF]"></div>
                 </div>
 
                 <p className="text-xs text-[#64748B] dark:text-[#94A3B8] px-1">
@@ -196,7 +196,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onFini
                   <h2 className="text-lg font-black text-[#1E293B] dark:text-[#F8FAFC]">
                     آب بخور، حال خوبت رو بساز
                   </h2>
-                  <div className="text-sm font-bold text-[#2D9CFF]">💙</div>
+                  <div className="text-sm font-bold text-[#2D9CFF]"></div>
                 </div>
 
                 <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
@@ -253,7 +253,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onFini
                   <h2 className="text-lg font-black text-[#1E293B] dark:text-[#F8FAFC]">
                     یادآوری دوستانه: وقت آب خوردن
                   </h2>
-                  <div className="text-sm font-bold text-[#2D9CFF]">💙</div>
+                  <div className="text-sm font-bold text-[#2D9CFF]"></div>
                 </div>
 
                 {/* Reminder Option Card */}
@@ -320,7 +320,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onFini
                   <h2 className="text-xl font-black text-white">
                     تداوم، کلید تغییر است
                   </h2>
-                  <div className="text-sm font-bold text-[#E6F4FF]">💙</div>
+                  <div className="text-sm font-bold text-[#E6F4FF]"></div>
                 </div>
 
                 <div className="w-full p-3 rounded-2xl bg-white/15 backdrop-blur-xs text-right text-xs space-y-1.5 border border-white/20">
@@ -345,7 +345,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onFini
                     onClick={() => onFinish(name, goal, reminders)}
                     className="flex-1 h-12 rounded-2xl bg-white text-[#1E70E8] hover:bg-[#E6F4FF] font-black text-sm flex items-center justify-center gap-2 transition-all shadow-lg active:scale-[0.98] cursor-pointer"
                   >
-                    <span>شروع سفر سلامتی 💙</span>
+                    <span>شروع سفر سلامتی </span>
                     <Sparkles className="w-4 h-4" />
                   </button>
                 </div>

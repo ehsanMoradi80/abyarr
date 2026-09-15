@@ -170,7 +170,8 @@ export function StatsScreen({ logs = [], goalGlasses = 8, streakDays = 1 }) {
         </View>
       </View>
 
-      <View style={{ height: 40 }} />
+      {/* Safe bottom spacer */}
+      <View style={{ height: 110 }} />
     </ScrollView>
   );
 }

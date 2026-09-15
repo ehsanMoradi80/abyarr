@@ -78,7 +78,7 @@ export const CelebrationMotivationModal: React.FC<CelebrationMotivationModalProp
   };
 
   const handleShare = async () => {
-    const text = `🎉 دستاورد جدید در برنامه «نوش»: ${payload.title} - ${payload.subtitle} 💧✨`;
+    const text = ` دستاورد جدید در برنامه «نوش»: ${payload.title} - ${payload.subtitle} `;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -110,11 +110,11 @@ export const CelebrationMotivationModal: React.FC<CelebrationMotivationModalProp
             <div className="z-10 flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-xs font-black border border-white/30">
               <Sparkles className="w-3.5 h-3.5" />
               <span>
-                {payload.type === 'badge_unlocked' && 'نشان جدید باز شد! 🏅'}
-                {payload.type === 'milestone_unlocked' && 'فتح مایل‌استون 💎'}
-                {payload.type === 'streak_target_completed' && 'هدف استریک تکمیل شد! 🏆'}
-                {payload.type === 'streak_progress' && 'پیشرفت عالی استریک 🔥'}
-                {payload.type === 'streak_maintained' && 'تداوم زنجیره سلامت ✨'}
+                {payload.type === 'badge_unlocked' && 'نشان جدید باز شد! '}
+                {payload.type === 'milestone_unlocked' && 'فتح مایل‌استون '}
+                {payload.type === 'streak_target_completed' && 'هدف استریک تکمیل شد! '}
+                {payload.type === 'streak_progress' && 'پیشرفت عالی استریک '}
+                {payload.type === 'streak_maintained' && 'تداوم زنجیره سلامت '}
               </span>
             </div>
 
@@ -170,7 +170,7 @@ export const CelebrationMotivationModal: React.FC<CelebrationMotivationModalProp
             {payload.badgeTitle && (
               <div className="p-3 rounded-2xl bg-gradient-to-r from-[#E6F4FF] via-[#D5EDFF] to-[#E6F4FF] dark:from-[#1E3A5F]/70 dark:to-[#172E4C]/70 border border-[#2D9CFF]/40 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-right">
-                  <span className="text-2xl">{payload.iconEmoji || '🏅'}</span>
+                  <span className="text-2xl">{payload.iconEmoji || ''}</span>
                   <div>
                     <span className="text-xs font-black block text-[#1E293B] dark:text-[#F8FAFC]">
                       {payload.badgeTitle}
@@ -221,11 +221,11 @@ export const CelebrationMotivationModal: React.FC<CelebrationMotivationModalProp
                 <div className="flex items-center gap-1.5 text-xs font-black text-[#1E293B] dark:text-[#F8FAFC]">
                   <Award className="w-4 h-4 text-[#2D9CFF]" />
                   <span>
-                    {isTargetCompleted ? 'انتخاب چالش استریک بزرگتر 🚀' : 'هدف‌گذاری استریک با پاداش XP بالا'}
+                    {isTargetCompleted ? 'انتخاب چالش استریک بزرگتر ' : 'هدف‌گذاری استریک با پاداش XP بالا'}
                   </span>
                 </div>
                 <span className="text-[10px] font-bold text-[#10B981] bg-[#10B981]/10 px-2 py-0.5 rounded-md">
-                  امتیاز تصاعدی ✨
+                  امتیاز تصاعدی 
                 </span>
               </div>
 
@@ -277,7 +277,7 @@ export const CelebrationMotivationModal: React.FC<CelebrationMotivationModalProp
 
               {isUpgraded && (
                 <div className="p-2 rounded-xl bg-[#D1FAE5] dark:bg-[#064E3B]/40 text-[#065F46] dark:text-[#A7F3D0] text-center text-xs font-bold animate-pulse">
-                  ✓ هدف استریک با موفقیت به {formatNumber(selectedTarget)} روز ارتقا یافت!
+                   هدف استریک با موفقیت به {formatNumber(selectedTarget)} روز ارتقا یافت!
                 </div>
               )}
             </div>
@@ -287,7 +287,7 @@ export const CelebrationMotivationModal: React.FC<CelebrationMotivationModalProp
               onClick={onClose}
               className="w-full h-12 rounded-2xl bg-gradient-to-r from-[#2D9CFF] to-[#0066CC] hover:opacity-95 text-white font-black text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer active:scale-98"
             >
-              <span>ادامه با انرژی و انگیزه 💧</span>
+              <span>ادامه با انرژی و انگیزه </span>
               <ChevronLeft className="w-4 h-4" />
             </button>
           </div>

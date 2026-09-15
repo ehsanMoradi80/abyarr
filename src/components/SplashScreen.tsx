@@ -166,7 +166,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
           </svg>
         </div>
 
-        {/* Motivational Footnote: "هر قطره، یک قدم به سلامتی 💙" */}
+        {/* Motivational Footnote: "هر قطره، یک قدم به سلامتی " */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -174,7 +174,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
           className="flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold text-[#0066CC] mt-1"
         >
           <span>هر قطره، یک قدم به سلامتی</span>
-          <span className="text-[#2D9CFF]">💙</span>
+          <span className="text-[#2D9CFF]"></span>
         </motion.div>
       </div>
 

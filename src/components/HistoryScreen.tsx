@@ -74,7 +74,7 @@ export const HistoryScreen: React.FC = () => {
             هویت سلامتی نوش
           </span>
           <h3 className="text-sm font-black text-[#1E293B] dark:text-[#F8FAFC]">
-            هر قطره، یک قدم به سلامتی 💙
+            هر قطره، یک قدم به سلامتی 
           </h3>
           <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
             پایش پیوسته، بهترین راه برای تثبیت عادت نوشیدن آب است.

@@ -110,7 +110,8 @@ export function HistoryScreen({ logs = [], goalGlasses = 8, onDeleteWater }) {
         })
       )}
 
-      <View style={{ height: 40 }} />
+      {/* Safe bottom spacer */}
+      <View style={{ height: 110 }} />
     </ScrollView>
   );
 }

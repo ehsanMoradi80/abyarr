@@ -155,7 +155,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         expression: payloadOrExpression,
         title: meta.persianTitle,
         message: meta.defaultPhrase,
-        actionText: '+۱ لیوان نوشیدم 💧',
+        actionText: '+۱ لیوان نوشیدم ',
         autoPlaySound: true,
       });
     } else {
@@ -200,7 +200,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTargetStreakDaysState(days);
     localStorage.setItem(STORAGE_KEYS.TARGET_STREAK, days.toString());
     const opt = STREAK_TARGET_OPTIONS.find((o) => o.days === days);
-    showToast(`🎯 هدف استریک روی ${days} روز تنظیم شد (+${opt?.bonusXp || 100} XP)`);
+    showToast(` هدف استریک روی ${days} روز تنظیم شد (+${opt?.bonusXp || 100} XP)`);
   };
 
 
@@ -537,7 +537,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setTimeout(() => {
         setCelebrationModalPayload({
           type: newlyUnlockedBadge.category === 'milestone' ? 'milestone_unlocked' : 'badge_unlocked',
-          title: `تبریک! ${newlyUnlockedBadge.title} را کسب کردی 🎉`,
+          title: `تبریک! ${newlyUnlockedBadge.title} را کسب کردی `,
           subtitle: newlyUnlockedBadge.description,
           badgeTitle: newlyUnlockedBadge.title,
           badgeDescription: newlyUnlockedBadge.description,
@@ -556,7 +556,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const targetOpt = STREAK_TARGET_OPTIONS.find((o) => o.days === targetStreakDays);
         setCelebrationModalPayload({
           type: 'streak_target_completed',
-          title: `شاهکار کردی! به هدف استریک ${targetStreakDays} روزه رسیدی 🔥`,
+          title: `شاهکار کردی! به هدف استریک ${targetStreakDays} روزه رسیدی `,
           subtitle: `تداوم شگفت‌انگیزت نشان‌دهنده اراده و سبک زندگی سالم توست. هدف بعدی را انتخاب کن!`,
           xpGained: targetOpt?.bonusXp || 300,
           currentStreak: nextStreak,
@@ -572,7 +572,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setTimeout(() => {
         setCelebrationModalPayload({
           type: 'streak_progress',
-          title: `فقط ۱ روز تا فتح هدف استریک! ⚡`,
+          title: `فقط ۱ روز تا فتح هدف استریک! `,
           subtitle: `تنها ۱ روز با هدف ${targetStreakDays} روزه فاصله داری. فردا هم ادامه بده تا پاداش بزرگ را بگیری!`,
           currentStreak: nextStreak,
           targetStreak: targetStreakDays,
@@ -743,7 +743,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       // Step 1: Fire Initial Notification & Noosh In-App Modal
       NativeBridgeService.showNotification(
-        '💧 وقت نوشیدن آب',
+        ' وقت نوشیدن آب',
         name ? `${name} عزیز، وقته که یه لیوان آب بنوشی!` : 'وقتشه یه لیوان آب تازه بنوشی!'
       );
 
@@ -751,11 +751,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const isUrgent = minutesSinceLastDrink > 180 || (todayTotalGlasses === 0 && now.getHours() >= 17);
       triggerNooshNotification({
         expression: isUrgent ? 'sad' : 'miss_you',
-        title: 'یادآوری نوشیدن آب 💧',
+        title: 'یادآوری نوشیدن آب ',
         message: name
-          ? `${name} عزیز، دلم برات تنگ شده! خیلی وقته آب نخوردی 🥺`
-          : 'دلم برات تنگ شده! خیلی وقته آب نخوردی 🥺',
-        actionText: '+۱ لیوان نوشیدم 💧',
+          ? `${name} عزیز، دلم برات تنگ شده! خیلی وقته آب نخوردی `
+          : 'دلم برات تنگ شده! خیلی وقته آب نخوردی ',
+        actionText: '+۱ لیوان نوشیدم ',
         autoPlaySound: true,
       });
 

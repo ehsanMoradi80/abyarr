@@ -168,16 +168,16 @@ export const GamificationModal: React.FC<GamificationModalProps> = ({ isOpen, on
                 </span>
                 <h4 className="text-lg font-black text-white">
                   {stats.unlockedCount === 4
-                    ? '🌊 استاد اقیانوس تداوم'
+                    ? ' استاد اقیانوس تداوم'
                     : stats.unlockedCount >= 2
-                    ? '✨ همراه شاداب نوش'
-                    : '💧 رهروی آغازین سلامتی'}
+                    ? ' همراه شاداب نوش'
+                    : ' رهروی آغازین سلامتی'}
                 </h4>
               </div>
 
               <div className="text-center bg-white/15 px-3 py-1.5 rounded-2xl backdrop-blur-2xs border border-white/20">
                 <span className="text-[10px] block text-[#E6F4FF]">امتیاز قطره</span>
-                <span className="text-base font-black text-white">{formatNumber(stats.xpPoints)} 💧</span>
+                <span className="text-base font-black text-white">{formatNumber(stats.xpPoints)} </span>
               </div>
             </div>
 
@@ -189,7 +189,7 @@ export const GamificationModal: React.FC<GamificationModalProps> = ({ isOpen, on
               </div>
               <div className="p-1.5 rounded-xl bg-white/10">
                 <span className="text-[10px] text-[#E6F4FF] block">رگه تداوم (Streak)</span>
-                <span className="text-xs font-black text-white">{formatNumber(stats.currentStreak)} روز 🔥</span>
+                <span className="text-xs font-black text-white">{formatNumber(stats.currentStreak)} روز </span>
               </div>
               <div className="p-1.5 rounded-xl bg-white/10">
                 <span className="text-[10px] text-[#E6F4FF] block">کل لیوان‌ها</span>
@@ -229,7 +229,7 @@ export const GamificationModal: React.FC<GamificationModalProps> = ({ isOpen, on
 
         {/* Bottom Tip */}
         <div className="pt-3 border-t border-[#E2E8F0] dark:border-[#334155] text-center text-xs text-[#64748B] dark:text-[#94A3B8]">
-          با هر لیوان آبی که می‌نوشی، نشان‌های بعدی آزاد شده و سلامتی‌ات پایدارتر می‌شود 💙
+          با هر لیوان آبی که می‌نوشی، نشان‌های بعدی آزاد شده و سلامتی‌ات پایدارتر می‌شود 
         </div>
       </motion.div>
 

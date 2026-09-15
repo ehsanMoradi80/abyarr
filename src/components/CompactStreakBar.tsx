@@ -45,7 +45,7 @@ export const CompactStreakBar: React.FC<CompactStreakBarProps> = ({
           </span>
           {streakDays >= 3 && (
             <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-[#F59E0B]/15 text-[#D97706] dark:text-[#FBBF24]">
-              آتشین 🔥
+              آتشین 
             </span>
           )}
         </div>

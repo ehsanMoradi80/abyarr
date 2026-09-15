@@ -47,7 +47,7 @@ export const HomeScreen: React.FC = () => {
     <div className="space-y-4 pb-24">
       {/* Top Header */}
       <Header
-        title={name ? `سلام ${name}! 🌊` : 'سلام! 🌊'}
+        title={name ? `سلام ${name}! ` : 'سلام! '}
         subtitle={strings.greeting}
         showLogo={true}
         right={

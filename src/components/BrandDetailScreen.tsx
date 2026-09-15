@@ -127,7 +127,7 @@ export const BrandDetailScreen: React.FC = () => {
           {/* Slogan */}
           <div className="w-full space-y-2 z-10">
             <h2 className="text-lg font-black tracking-tight leading-snug">
-              {config.slogan} 💙
+              {config.slogan} 
             </h2>
             <p
               className={`text-xs leading-relaxed max-w-xs mx-auto ${

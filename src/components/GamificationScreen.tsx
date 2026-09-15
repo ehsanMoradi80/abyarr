@@ -73,7 +73,7 @@ export const GamificationScreen: React.FC = () => {
     if (badge) {
       triggerCelebrationModal({
         type: badge.category === 'milestone' ? 'milestone_unlocked' : 'badge_unlocked',
-        title: `نشان افتخار: ${badge.title} 🏅`,
+        title: `نشان افتخار: ${badge.title} `,
         subtitle: badge.description,
         badgeTitle: badge.title,
         badgeDescription: badge.description,
@@ -86,7 +86,7 @@ export const GamificationScreen: React.FC = () => {
     } else {
       triggerCelebrationModal({
         type: 'streak_target_completed',
-        title: `هدف استریک ${formatNumber(targetStreakDays)} روزه! 🏆`,
+        title: `هدف استریک ${formatNumber(targetStreakDays)} روزه! `,
         subtitle: 'شما با تداوم در نوشیدن آب به سطح عالی از تندرستی دست یافته‌اید.',
         xpGained: 500,
         currentStreak: Math.max(streakDays, targetStreakDays),
@@ -166,7 +166,7 @@ export const GamificationScreen: React.FC = () => {
                 <span className="text-[10px] text-[#E6F4FF] block">امتیاز (XP)</span>
                 <span className="text-base font-black text-white">{formatNumber(totalXP)}</span>
               </div>
-              <span className="text-lg">💧</span>
+              <span className="text-lg"></span>
             </div>
 
             <div className="p-2.5 rounded-2xl bg-white/15 backdrop-blur-xs border border-white/20 flex items-center justify-between">
@@ -221,7 +221,7 @@ export const GamificationScreen: React.FC = () => {
                   <div className="absolute -top-1 -right-1">
                     {isUnlocked ? (
                       <div className="w-4 h-4 rounded-full bg-[#10B981] text-white flex items-center justify-center text-[9px] font-bold shadow-xs">
-                        ✓
+                        
                       </div>
                     ) : (
                       <div className="w-4 h-4 rounded-full bg-[#64748B] text-white flex items-center justify-center shadow-xs">
@@ -255,7 +255,7 @@ export const GamificationScreen: React.FC = () => {
               }}
               className="px-2.5 py-1.5 rounded-xl bg-[#E6F4FF] dark:bg-[#1E3A5F] text-[#0066CC] dark:text-[#56B7FF] text-[11px] font-bold hover:bg-[#2D9CFF] hover:text-white transition-all cursor-pointer flex items-center gap-1"
             >
-              <span>🎉 صدای سلبریشن</span>
+              <span> صدای سلبریشن</span>
             </button>
 
             <button
@@ -264,7 +264,7 @@ export const GamificationScreen: React.FC = () => {
               }}
               className="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-[#64748B] dark:text-[#94A3B8] text-[11px] font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer flex items-center gap-1"
             >
-              <span>📉 صدای قطع استریک</span>
+              <span> صدای قطع استریک</span>
             </button>
           </div>
         </div>
@@ -385,9 +385,9 @@ export const GamificationScreen: React.FC = () => {
         {/* Filter Chips */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
           {[
-            { id: 'all', label: 'همه', icon: '🏆' },
-            { id: 'streak', label: 'زنجیره', icon: '🔥' },
-            { id: 'volume', label: 'حجم مصرف', icon: '🌊' },
+            { id: 'all', label: 'همه', icon: '' },
+            { id: 'streak', label: 'زنجیره', icon: '' },
+            { id: 'volume', label: 'حجم مصرف', icon: '' },
             { id: 'timing', label: 'زمان‌بندی', icon: '⏰' },
             { id: 'milestone', label: 'شاخص‌ها', icon: '⭐' },
           ].map((f) => (
@@ -513,7 +513,7 @@ export const GamificationScreen: React.FC = () => {
                   className="w-full h-11 rounded-2xl bg-gradient-to-r from-[#2D9CFF] to-[#0066CC] text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-xs hover:opacity-95 transition-all cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4" />
-                  <span>مشاهده جشن افتخار این نشان 🎉</span>
+                  <span>مشاهده جشن افتخار این نشان </span>
                 </button>
 
                 <button

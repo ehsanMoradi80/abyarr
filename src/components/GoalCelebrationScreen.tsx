@@ -48,7 +48,7 @@ export const GoalCelebrationScreen: React.FC<GoalCelebrationScreenProps> = ({ on
   };
 
   const handleShare = async () => {
-    const text = `🎉 امروز تمام هدف نوشیدن آب روزانه‌ام (${formatNumber(todayTotalGlasses)} لیوان) رو در برنامه «نوش» کامل کردم و زنجیره استریکم به ${formatNumber(streakDays)} روز رسید! 💧✨`;
+    const text = ` امروز تمام هدف نوشیدن آب روزانه‌ام (${formatNumber(todayTotalGlasses)} لیوان) رو در برنامه «نوش» کامل کردم و زنجیره استریکم به ${formatNumber(streakDays)} روز رسید! `;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -61,7 +61,7 @@ export const GoalCelebrationScreen: React.FC<GoalCelebrationScreenProps> = ({ on
       }
     } else {
       await navigator.clipboard.writeText(text);
-      showToast('متن دستاورد کپی شد ✨');
+      showToast('متن دستاورد کپی شد ');
     }
   };
 
@@ -71,7 +71,7 @@ export const GoalCelebrationScreen: React.FC<GoalCelebrationScreenProps> = ({ on
     // Slide 0: جشن و تبریک اولیه
     {
       id: 'cheer',
-      title: 'آفرین به اراده‌ات! 💧✨',
+      title: 'آفرین به اراده‌ات! ',
       subtitle: 'گام مهمی برای تندرستی و نشاط برداشتی',
       image: CELEBRATION_IMAGES.cheer,
       alt: 'کاراکتر شاداب نوش',
@@ -81,7 +81,7 @@ export const GoalCelebrationScreen: React.FC<GoalCelebrationScreenProps> = ({ on
     // Slide 1: حفظ استرایک و تداوم زنجیره
     {
       id: 'streak_saved',
-      title: 'شعله استریکت شعله‌ور ماند! 🔥',
+      title: 'شعله استریکت شعله‌ور ماند! ',
       subtitle: `با تکمیل امروز، زنجیره ${formatNumber(streakDays)} روزه تو تثبیت شد`,
       image: CELEBRATION_IMAGES.streakFire,
       alt: 'آتش زنجیره استریک',
@@ -92,7 +92,7 @@ export const GoalCelebrationScreen: React.FC<GoalCelebrationScreenProps> = ({ on
     {
       id: 'heart_love',
       title: 'تو فوق‌العاده‌ای!',
-      subtitle: 'بدنت ازت ممنونه 💙',
+      subtitle: 'بدنت ازت ممنونه ',
       image: CELEBRATION_IMAGES.heart,
       alt: 'آغوش قلب و آب',
       bgTheme: 'from-[#F0F7FF] via-[#E1F0FF] to-[#F2F6FA] dark:from-[#0B192C] dark:via-[#162D4A] dark:to-[#0B192C]',
@@ -101,8 +101,8 @@ export const GoalCelebrationScreen: React.FC<GoalCelebrationScreenProps> = ({ on
     // Slide 3: آرامش شبانه
     {
       id: 'night_peace',
-      title: 'استراحت کن قهرمان 🌙',
-      subtitle: 'فردا روز قشنگتریه ✨',
+      title: 'استراحت کن قهرمان ',
+      subtitle: 'فردا روز قشنگتریه ',
       image: CELEBRATION_IMAGES.sleep,
       alt: 'خواب آرام در شب',
       bgTheme: 'from-[#0B192C] via-[#10223D] to-[#081220] text-white',
@@ -112,7 +112,7 @@ export const GoalCelebrationScreen: React.FC<GoalCelebrationScreenProps> = ({ on
     // Slide 4: خلاصه عملکرد و ارتقای هدف استریک
     {
       id: 'summary',
-      title: 'عملکرد امروز و چالش بعدی 🎯',
+      title: 'عملکرد امروز و چالش بعدی ',
       subtitle: 'تداوم رمز اصلی سلامتی و شادابی است',
       bgTheme: 'from-[#E6F4FF] via-[#F2F6FA] to-[#E6F4FF] dark:from-[#0B192C] dark:via-[#1E293B] dark:to-[#0B192C]',
       isSummary: true,
@@ -239,7 +239,7 @@ export const GoalCelebrationScreen: React.FC<GoalCelebrationScreenProps> = ({ on
                       <span>هدف استریک شما: {formatNumber(targetStreakDays)} روز پیوسته</span>
                     </span>
                     <span className="text-[10px] font-bold text-[#10B981] bg-[#10B981]/15 px-2 py-0.5 rounded-md">
-                      تضمین تداوم ✨
+                      تضمین تداوم 
                     </span>
                   </div>
 
@@ -249,7 +249,7 @@ export const GoalCelebrationScreen: React.FC<GoalCelebrationScreenProps> = ({ on
                         key={opt.days}
                         onClick={() => {
                           setTargetStreakDays(opt.days);
-                          showToast(`هدف به ${opt.days} روز ارتقا یافت 🎯`);
+                          showToast(`هدف به ${opt.days} روز ارتقا یافت `);
                         }}
                         className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 ${
                           targetStreakDays === opt.days
@@ -318,7 +318,7 @@ export const GoalCelebrationScreen: React.FC<GoalCelebrationScreenProps> = ({ on
               onClick={handleClose}
               className="flex-1 h-13 rounded-2xl bg-gradient-to-r from-[#2D9CFF] via-[#0066CC] to-[#2D9CFF] text-white font-black text-sm flex items-center justify-center gap-2 shadow-md hover:opacity-95 transition-all cursor-pointer active:scale-98"
             >
-              <span>عالی بود! ادامه بده 💙</span>
+              <span>عالی بود! ادامه بده </span>
             </button>
           )}
         </div>

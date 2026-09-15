@@ -66,7 +66,7 @@ export class ExpoWaterAlarmManager {
       // 1. Initial Notification
       const id = await Notifications.scheduleNotificationAsync({
         content: {
-          title: '💧 یادآور نوشیدن آب‌یار',
+          title: ' یادآور نوشیدن آب‌یار',
           body: userName ? `${userName} عزیز، وقتشه یه لیوان آب بنوشی!` : 'وقت نوشیدن یک لیوان آب تازه است!',
           channelId: 'water-alarm-channel',
           sound: true,

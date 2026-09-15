@@ -174,7 +174,13 @@ export const App: React.FC = () => {
         onClose={closeNooshNotification}
       />
 
-      <main className="flex-1 w-full max-w-md mx-auto px-4 pt-4">
+      <main
+        className="flex-1 w-full max-w-md mx-auto px-4"
+        style={{
+          paddingTop: 'max(16px, env(safe-area-inset-top, 16px))',
+          paddingBottom: 'calc(96px + env(safe-area-inset-bottom, 16px))',
+        }}
+      >
         {activeTab === 'home' && <HomeScreen />}
         {activeTab === 'history' && <HistoryScreen />}
         {activeTab === 'stats' && <StatisticsScreen />}

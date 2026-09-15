@@ -392,7 +392,7 @@ export const BrandCard: React.FC<{ item: BrandCardItem; className?: string }> = 
       </h4>
 
       {/* Heart Accent */}
-      <span className="text-xs text-[#2D9CFF] mt-1 font-bold">💙</span>
+      <span className="text-xs text-[#2D9CFF] mt-1 font-bold"></span>
 
       {/* Subtitle */}
       {item.subtitle && (
@@ -414,7 +414,7 @@ export const BrandCardsSection: React.FC<{
       {title && (
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <span className="text-base">✨</span>
+            <span className="text-base"></span>
             <h3 className="text-sm font-bold text-[#1E293B] dark:text-[#F8FAFC]">
               {title}
             </h3>

@@ -9,10 +9,10 @@ interface QuickAddProps {
 }
 
 const QUICK_AMOUNTS = [
-  { amount: 0.5, label: 'نصف لیوان', icon: '🥛' },
-  { amount: 1, label: '۱ لیوان', icon: '🥛' },
-  { amount: 2, label: '۲ لیوان', icon: '🍶' },
-  { amount: 3, label: '۳ لیوان', icon: '🧊' },
+  { amount: 0.5, label: 'نصف لیوان', icon: '' },
+  { amount: 1, label: '۱ لیوان', icon: '' },
+  { amount: 2, label: '۲ لیوان', icon: '' },
+  { amount: 3, label: '۳ لیوان', icon: '' },
 ];
 
 export const QuickAdd: React.FC<QuickAddProps> = ({ onAdd, onOpenCustom }) => {

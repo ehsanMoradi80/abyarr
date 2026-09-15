@@ -319,7 +319,7 @@ export const NooshMascot: React.FC<NooshMascotProps> = ({
       {/* Tap hint if interactive */}
       {interactive && (
         <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] mt-1 opacity-70">
-          برای گفت‌وگو لمس کن 👆
+          برای گفت‌وگو لمس کن 
         </span>
       )}
     </div>

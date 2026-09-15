@@ -50,7 +50,7 @@ export const WidgetsScreen: React.FC = () => {
 
   const handleQuickAdd = () => {
     addWater(1);
-    showToast('💧 ۱ لیوان آب از طریق ویجت ثبت شد!');
+    showToast(' ۱ لیوان آب از طریق ویجت ثبت شد!');
   };
 
   return (

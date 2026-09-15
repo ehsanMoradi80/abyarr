@@ -186,7 +186,8 @@ export function SettingsScreen({
         <Text style={styles.footerVersion}>نسخه ۱.۰.۰ • React Native بومی</Text>
       </View>
 
-      <View style={{ height: 40 }} />
+      {/* Safe bottom spacer */}
+      <View style={{ height: 110 }} />
     </ScrollView>
   );
 }

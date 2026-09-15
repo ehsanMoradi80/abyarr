@@ -12,15 +12,15 @@ export const startAppTour = (onComplete?: () => void) => {
       overlayOpacity: 0.75,
       stagePadding: 8,
       stageRadius: 20,
-      nextBtnText: 'بعدی ❯',
-      prevBtnText: '❮ قبلی',
-      doneBtnText: 'شروع! 💙',
+      nextBtnText: 'بعدی ',
+      prevBtnText: ' قبلی',
+      doneBtnText: 'شروع! ',
       progressText: 'گام {{current}} از {{total}}',
       steps: [
         {
           element: '#app-header',
           popover: {
-            title: 'نوش 💧',
+            title: 'نوش ',
             description: 'دسترسی سریع به نشان‌ها، همراه سلامت و وضعیت همگام‌سازی ابری.',
             side: 'bottom',
             align: 'center',
@@ -29,7 +29,7 @@ export const startAppTour = (onComplete?: () => void) => {
         {
           element: '#compact-streak-bar',
           popover: {
-            title: 'زنجیره تداوم روزانه 🔥',
+            title: 'زنجیره تداوم روزانه ',
             description: 'روزهای متوالی مصرف آب را دنبال کنید و با کلیک روی آن، به تالار افتخارات و نشان‌ها بروید.',
             side: 'bottom',
             align: 'center',
@@ -38,7 +38,7 @@ export const startAppTour = (onComplete?: () => void) => {
         {
           element: '#progress-ring-card',
           popover: {
-            title: 'حلقه هوشمند پیشرفت 🎯',
+            title: 'حلقه هوشمند پیشرفت ',
             description: 'میزان آب نوشیده شده امروز و درصد دستیابی به هدف روزانه.',
             side: 'bottom',
             align: 'center',
@@ -47,7 +47,7 @@ export const startAppTour = (onComplete?: () => void) => {
         {
           element: '#cup-selector-section',
           popover: {
-            title: 'انتخاب اندازه لیوان 🥛',
+            title: 'انتخاب اندازه لیوان ',
             description: 'اندازه لیوان یا ماگ دلخواه را انتخاب و با یک لمس ثبت کنید.',
             side: 'top',
             align: 'center',
@@ -56,7 +56,7 @@ export const startAppTour = (onComplete?: () => void) => {
         {
           element: '#nav-quick-add-btn',
           popover: {
-            title: 'ثبت سریع (+۱ لیوان) ✨',
+            title: 'ثبت سریع (+۱ لیوان) ',
             description: 'دکمه شناور همیشه آماده برای ثبت سریع یک لیوان آب.',
             side: 'top',
             align: 'center',
@@ -65,7 +65,7 @@ export const startAppTour = (onComplete?: () => void) => {
         {
           element: '#app-navigation-bar',
           popover: {
-            title: 'ناوبری برنامه 🧭',
+            title: 'ناوبری برنامه ',
             description: 'مشاهده تاریخچه، آمار تحلیلی و تنظیمات یادآورهای صوتی.',
             side: 'top',
             align: 'center',

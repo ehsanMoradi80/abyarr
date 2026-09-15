@@ -325,11 +325,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onOpenSplash }) 
 
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { id: 'crystal_drop' as WaterSoundEffect, label: 'قطره زلال', emoji: '💧' },
+                    { id: 'crystal_drop' as WaterSoundEffect, label: 'قطره زلال', emoji: '' },
                     { id: 'gentle_bubble' as WaterSoundEffect, label: 'حباب آرام', emoji: '🫧' },
-                    { id: 'crisp_pour' as WaterSoundEffect, label: 'جریان آب', emoji: '✨' },
-                    { id: 'subtle_pop' as WaterSoundEffect, label: 'تیک نرم', emoji: '🔘' },
-                    { id: 'silent' as WaterSoundEffect, label: 'بی‌صدا', emoji: '🔇' },
+                    { id: 'crisp_pour' as WaterSoundEffect, label: 'جریان آب', emoji: '' },
+                    { id: 'subtle_pop' as WaterSoundEffect, label: 'تیک نرم', emoji: '' },
+                    { id: 'silent' as WaterSoundEffect, label: 'بی‌صدا', emoji: '' },
                   ].map((s) => {
                     const isSelected = (reminder.waterSoundEffect || 'crystal_drop') === s.id;
                     return (
@@ -350,7 +350,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onOpenSplash }) 
                           <span>{s.emoji}</span>
                           <span>{s.label}</span>
                         </span>
-                        {isSelected && <span className="text-[10px]">✓</span>}
+                        {isSelected && <span className="text-[10px]"></span>}
                       </button>
                     );
                   })}
@@ -367,7 +367,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onOpenSplash }) 
                   }}
                   className="w-full py-2.5 px-3 rounded-2xl bg-[#E6F4FF] dark:bg-[#1E3A5F] text-[#0066CC] dark:text-[#8ED3FF] text-xs font-bold hover:opacity-90 flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <span>🔊 تست پخش زنگ و صدای فارسی</span>
+                  <span> تست پخش زنگ و صدای فارسی</span>
                 </button>
               </div>
             </div>
@@ -380,7 +380,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onOpenSplash }) 
         <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0] dark:border-[#334155]">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#2D9CFF] to-[#0066CC] flex items-center justify-center text-white shadow-xs text-sm">
-              💧
+              
             </div>
             <div>
               <h3 className="text-base font-bold text-[#1E293B] dark:text-[#F8FAFC]">

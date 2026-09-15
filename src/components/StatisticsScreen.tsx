@@ -60,7 +60,7 @@ export const StatisticsScreen: React.FC = () => {
             رشد و تداوم
           </span>
           <h3 className="text-sm font-black text-white">
-            تداوم، کلید تغییر است 💙
+            تداوم، کلید تغییر است 
           </h3>
           <p className="text-xs text-[#E6F4FF] leading-relaxed max-w-[200px]">
             نوشیدن منظم آب انرژی روزانه‌ات رو پایدار نگه می‌داره.

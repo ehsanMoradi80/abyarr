@@ -11,7 +11,14 @@ interface NavigationProps {
 
 export const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange, onQuickAdd }) => {
   return (
-    <div id="app-navigation-bar" className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#1E293B]/95 backdrop-blur-lg border-t border-[#E2E8F0] dark:border-[#334155] py-2 px-3 shadow-lg">
+    <div
+      id="app-navigation-bar"
+      className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#1E293B]/95 backdrop-blur-lg border-t border-[#E2E8F0] dark:border-[#334155] px-3 shadow-lg"
+      style={{
+        paddingTop: '8px',
+        paddingBottom: 'max(10px, env(safe-area-inset-bottom, 10px))',
+      }}
+    >
       <div className="max-w-md mx-auto flex items-center justify-between">
 
         {/* Tab 1: Home (خانه) */}
