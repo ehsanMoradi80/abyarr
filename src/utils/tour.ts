@@ -39,7 +39,7 @@ export const startAppTour = (onComplete?: () => void) => {
           element: '#noosh-mascot-card',
           popover: {
             title: 'همراه سلامت نوش',
-            description: 'کاراکتر هوشمند نوش که با پیام‌های انگیزشی و واکنش‌های متناسب با وضعیت آب بدنتان همراهی‌تان می‌کند.',
+            description: 'کاراکتر هوشمند نوش که با حالت‌های چهره و واکنش‌های بصری متناسب با وضعیت آب بدنتان همراهی‌تان می‌کند.',
             side: 'bottom',
             align: 'center',
           },

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Heart, Droplets, Volume2 } from 'lucide-react';
+import { Sparkles, Droplets, Volume2 } from 'lucide-react';
 import {
   NooshExpression,
   NOOSH_MASCOT_STATES,
@@ -253,17 +253,6 @@ export const NooshMascot: React.FC<NooshMascotProps> = ({
               <Sparkles className="w-5 h-5" />
             </motion.div>
           </>
-        )}
-
-        {/* Floating Heart for Happy state */}
-        {expression === 'happy' && (
-          <motion.div
-            animate={{ y: [-2, -8, -2], opacity: [0.8, 1, 0.8] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="absolute top-0 right-1 text-[#2D9CFF] pointer-events-none drop-shadow-sm"
-          >
-            <Heart className="w-5 h-5 fill-current" />
-          </motion.div>
         )}
 
         {/* Floating Water Droplet for Sad state */}

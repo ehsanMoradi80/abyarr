@@ -8,13 +8,17 @@ import {
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
-import { Home, Calendar, BarChart3, Settings, Plus } from 'lucide-react-native';
+import { Home, Calendar, BarChart3, Settings, Plus, Trophy } from 'lucide-react-native';
 
 import { Header } from './native/Header';
 import { HomeScreen } from './native/HomeScreen';
 import { HistoryScreen } from './native/HistoryScreen';
 import { StatsScreen } from './native/StatsScreen';
 import { SettingsScreen } from './native/SettingsScreen';
+import { RewardsScreen } from './native/RewardsScreen';
+import { PartnerScreen } from './native/PartnerScreen';
+import { CloudScreen } from './native/CloudScreen';
+import { WidgetsScreen } from './native/WidgetsScreen';
 import { BadgesModal } from './native/BadgesModal';
 import { CelebrationModal } from './native/CelebrationModal';
 import { CustomAmountModal } from './native/CustomAmountModal';
@@ -32,7 +36,7 @@ import {
 import { getTodayKey } from './native/strings';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('home'); // 'home' | 'history' | 'stats' | 'settings'
+  const [activeTab, setActiveTab] = useState('home'); // 'home' | 'history' | 'rewards' | 'stats' | 'settings' | 'partner' | 'cloud' | 'widgets'
   const [appData, setAppData] = useState({
     name: 'دوست خوبم',
     goalGlasses: 8,
@@ -50,13 +54,13 @@ export default function App() {
   const [celebrationVisible, setCelebrationVisible] = useState(false);
   const [customAmountVisible, setCustomAmountVisible] = useState(false);
 
-  // Dynamic safe area insets for Android & iOS
+  // Dynamic safe area insets for Android & iOS with comfortable breathing room
   const screenDimensions = Dimensions.get('screen');
   const windowDimensions = Dimensions.get('window');
   const statusBarHeight = StatusBar.currentHeight || (Platform.OS === 'android' ? 28 : 44);
   const topInset = Platform.OS === 'android' ? statusBarHeight : 44;
   const navBarDifference = Math.max(screenDimensions.height - windowDimensions.height, 0);
-  const bottomInset = Platform.OS === 'android' ? Math.max(navBarDifference, 16) : 24;
+  const bottomInset = Platform.OS === 'android' ? Math.max(navBarDifference + 8, 20) : 28;
 
   // Initialize data and notifications on launch
   useEffect(() => {
@@ -168,6 +172,9 @@ export default function App() {
     }
   };
 
+  // Determine whether to show main top header
+  const isFullScreenSubPage = ['rewards', 'partner', 'cloud', 'widgets'].includes(activeTab);
+
   return (
     <View style={[styles.rootContainer, { paddingTop: topInset }]}>
       <StatusBar
@@ -176,14 +183,18 @@ export default function App() {
         translucent
       />
 
-      {/* Top Header Bar */}
-      <Header
-        title={`سلام، ${appData.name || 'دوست خوبم'}`}
-        subtitle="نوشیدن آب، یادآوری عشق به خودت"
-        onOpenBadges={() => setBadgesVisible(true)}
-        onOpenReminders={() => setActiveTab('settings')}
-        onOpenSettings={() => setActiveTab('settings')}
-      />
+      {/* Top Header Bar (Shown on primary screens) */}
+      {!isFullScreenSubPage && (
+        <Header
+          title={`سلام، ${appData.name || 'دوست خوبم'}`}
+          subtitle="نوشیدن آب، یادآوری عشق به خودت"
+          onOpenRewards={() => setActiveTab('rewards')}
+          onOpenPartner={() => setActiveTab('partner')}
+          onOpenCloud={() => setActiveTab('cloud')}
+          onOpenWidgets={() => setActiveTab('widgets')}
+          onOpenSettings={() => setActiveTab('settings')}
+        />
+      )}
 
       {/* Main Screen Content */}
       <View style={styles.contentArea}>
@@ -198,6 +209,42 @@ export default function App() {
             onAddWater={handleAddWater}
             onDeleteWater={handleDeleteWater}
             onOpenCustomAmount={() => setCustomAmountVisible(true)}
+            onOpenRewards={() => setActiveTab('rewards')}
+            onOpenPartner={() => setActiveTab('partner')}
+            onOpenCloud={() => setActiveTab('cloud')}
+            onOpenWidgets={() => setActiveTab('widgets')}
+          />
+        )}
+
+        {activeTab === 'rewards' && (
+          <RewardsScreen
+            todayGlasses={totalGlasses}
+            goalGlasses={appData.goalGlasses || 8}
+            streakDays={appData.streakDays || 1}
+            onBack={() => setActiveTab('home')}
+          />
+        )}
+
+        {activeTab === 'partner' && (
+          <PartnerScreen
+            onBack={() => setActiveTab('home')}
+          />
+        )}
+
+        {activeTab === 'cloud' && (
+          <CloudScreen
+            logsCount={(appData.logs || []).length}
+            onBack={() => setActiveTab('home')}
+          />
+        )}
+
+        {activeTab === 'widgets' && (
+          <WidgetsScreen
+            todayGlasses={totalGlasses}
+            goalGlasses={appData.goalGlasses || 8}
+            streakDays={appData.streakDays || 1}
+            onBack={() => setActiveTab('home')}
+            onQuickAdd={() => handleAddWater(1, 250)}
           />
         )}
 
@@ -253,24 +300,24 @@ export default function App() {
             </Text>
           </TouchableOpacity>
 
-          {/* Stats Tab */}
+          {/* Rewards Tab (جوایز و ریواردز) */}
           <TouchableOpacity
             style={styles.navItem}
-            onPress={() => setActiveTab('stats')}
+            onPress={() => setActiveTab('rewards')}
             activeOpacity={0.7}
           >
-            <BarChart3
+            <Trophy
               size={22}
-              color={activeTab === 'stats' ? '#2D9CFF' : '#94A3B8'}
-              strokeWidth={activeTab === 'stats' ? 2.4 : 1.8}
+              color={activeTab === 'rewards' ? '#2D9CFF' : '#94A3B8'}
+              strokeWidth={activeTab === 'rewards' ? 2.4 : 1.8}
             />
             <Text
               style={[
                 styles.navLabel,
-                activeTab === 'stats' && styles.navLabelActive,
+                activeTab === 'rewards' && styles.navLabelActive,
               ]}
             >
-              آمار
+              جوایز
             </Text>
           </TouchableOpacity>
 
@@ -374,19 +421,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 8,
+    paddingTop: 8,
+    paddingBottom: 8, // Added generous breathing room
   },
   navBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    height: 60,
-    paddingHorizontal: 8,
+    height: 64,
+    paddingHorizontal: 10,
   },
   navItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 6,
+    paddingVertical: 4,
   },
   navLabel: {
     fontSize: 11,
@@ -399,7 +448,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   quickAddWrapper: {
-    width: 60,
+    width: 58,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -415,6 +464,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 8,
     elevation: 6,
-    marginBottom: 14,
+    marginBottom: 12,
   },
 });

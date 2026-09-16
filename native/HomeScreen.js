@@ -6,7 +6,18 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-import { Droplet, Droplets, Sparkles, Bell, Trash2 } from 'lucide-react-native';
+import {
+  Droplet,
+  Droplets,
+  Sparkles,
+  Bell,
+  Trash2,
+  Trophy,
+  Users,
+  Cloud,
+  Smartphone,
+  ChevronLeft,
+} from 'lucide-react-native';
 import { CompactStreakBar } from './CompactStreakBar';
 import { NooshMascotCard } from './NooshMascotCard';
 import { ProgressRing } from './ProgressRing';
@@ -23,6 +34,10 @@ export function HomeScreen({
   onAddWater,
   onDeleteWater,
   onOpenCustomAmount,
+  onOpenRewards,
+  onOpenPartner,
+  onOpenCloud,
+  onOpenWidgets,
 }) {
   const percentage = goalGlasses > 0 ? Math.min(Math.round((todayGlasses / goalGlasses) * 100), 100) : 0;
   const isGoalReached = todayGlasses >= goalGlasses && goalGlasses > 0;
@@ -52,8 +67,68 @@ export function HomeScreen({
         userName={userName}
       />
 
-      {/* 3. Main Progress Ring Card */}
+      {/* 3. Feature Hub: Quick Access to Rewards, Partner, Widgets, Cloud */}
+      <View style={styles.hubGrid}>
+        <TouchableOpacity
+          style={styles.hubCard}
+          onPress={onOpenRewards}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.hubIconCircle, { backgroundColor: '#FEF3C7' }]}>
+            <Trophy size={18} color="#D97706" />
+          </View>
+          <View style={styles.hubTextCol}>
+            <Text style={styles.hubTitle}>جوایز و XP</Text>
+            <Text style={styles.hubSubtitle}>سطح و نشان‌ها</Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.hubCard}
+          onPress={onOpenPartner}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.hubIconCircle, { backgroundColor: '#D1FAE5' }]}>
+            <Users size={18} color="#059669" />
+          </View>
+          <View style={styles.hubTextCol}>
+            <Text style={styles.hubTitle}>همراه سلامت</Text>
+            <Text style={styles.hubSubtitle}>آب‌یار دو نفره</Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.hubCard}
+          onPress={onOpenWidgets}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.hubIconCircle, { backgroundColor: '#E0F2FE' }]}>
+            <Smartphone size={18} color="#0284C7" />
+          </View>
+          <View style={styles.hubTextCol}>
+            <Text style={styles.hubTitle}>ویجت‌ها</Text>
+            <Text style={styles.hubSubtitle}>صفحه گوشی</Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.hubCard}
+          onPress={onOpenCloud}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.hubIconCircle, { backgroundColor: '#EFF6FF' }]}>
+            <Cloud size={18} color="#2563EB" />
+          </View>
+          <View style={styles.hubTextCol}>
+            <Text style={styles.hubTitle}>همگام ابر</Text>
+            <Text style={styles.hubSubtitle}>پشتیبان امن</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      {/* 4. Main Progress Ring Card */}
       <View style={styles.progressCard}>
+
         <ProgressRing
           currentGlasses={todayGlasses}
           goalGlasses={goalGlasses}
@@ -175,6 +250,49 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 24,
+  },
+  hubGrid: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  hubCard: {
+    width: '48.5%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 12,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  hubIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  hubTextCol: {
+    alignItems: 'flex-end',
+    flex: 1,
+  },
+  hubTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#1E293B',
+  },
+  hubSubtitle: {
+    fontSize: 10,
+    color: '#64748B',
+    marginTop: 1,
   },
   progressCard: {
     backgroundColor: '#FFFFFF',

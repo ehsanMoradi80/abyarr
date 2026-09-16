@@ -1,13 +1,15 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
-import { Trophy, Bell, Settings } from 'lucide-react-native';
+import { Trophy, Users, Cloud, Smartphone, Settings } from 'lucide-react-native';
 import { AppLogo } from './AppLogo';
 
 export function Header({
   title = 'سلام!',
   subtitle = 'نوشیدن آب، یادآوری عشق به خودت',
-  onOpenBadges,
-  onOpenReminders,
+  onOpenRewards,
+  onOpenPartner,
+  onOpenCloud,
+  onOpenWidgets,
   onOpenSettings,
 }) {
   return (
@@ -26,23 +28,43 @@ export function Header({
 
       {/* Action Buttons */}
       <View style={styles.actionsSection}>
-        {onOpenBadges && (
+        {onOpenWidgets && (
           <TouchableOpacity
             style={styles.actionBtn}
-            onPress={onOpenBadges}
+            onPress={onOpenWidgets}
             activeOpacity={0.7}
           >
-            <Trophy size={17} color="#64748B" strokeWidth={2.2} />
+            <Smartphone size={17} color="#2D9CFF" strokeWidth={2.2} />
           </TouchableOpacity>
         )}
 
-        {onOpenReminders && (
+        {onOpenRewards && (
           <TouchableOpacity
             style={styles.actionBtn}
-            onPress={onOpenReminders}
+            onPress={onOpenRewards}
             activeOpacity={0.7}
           >
-            <Bell size={17} color="#64748B" strokeWidth={2.2} />
+            <Trophy size={17} color="#F59E0B" strokeWidth={2.2} />
+          </TouchableOpacity>
+        )}
+
+        {onOpenPartner && (
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={onOpenPartner}
+            activeOpacity={0.7}
+          >
+            <Users size={17} color="#10B981" strokeWidth={2.2} />
+          </TouchableOpacity>
+        )}
+
+        {onOpenCloud && (
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={onOpenCloud}
+            activeOpacity={0.7}
+          >
+            <Cloud size={17} color="#0284C7" strokeWidth={2.2} />
           </TouchableOpacity>
         )}
 
@@ -59,6 +81,7 @@ export function Header({
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   headerContainer: {
