@@ -1,7 +1,15 @@
 {
+  "id": "/",
   "short_name": "نوش",
   "name": "نوش - نوشیدن آب، یادآوری عشق به خودت",
+  "description": "پیگیری هوشمندانه مصرف روزانه آب، زنجیره تداوم، ویجت‌های تعاملی و همگام‌سازی سلامت",
   "icons": [
+    {
+      "src": "/icon.png",
+      "type": "image/png",
+      "sizes": "192x192 512x512",
+      "purpose": "any"
+    },
     {
       "src": "/icon.svg",
       "type": "image/svg+xml",
@@ -10,6 +18,7 @@
     }
   ],
   "start_url": "/",
+  "scope": "/",
   "background_color": "#F2F6FA",
   "theme_color": "#2D9CFF",
   "display": "standalone",

@@ -620,7 +620,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onOpenSplash }) 
             className="w-full h-11 rounded-2xl bg-white dark:bg-[#0B192C] border border-[#CBD5E1] dark:border-[#475569] text-[#1E293B] dark:text-[#F8FAFC] font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-98 hover:border-[#2D9CFF]"
           >
             <Compass className="w-4 h-4 text-[#2D9CFF]" />
-            <span>معرفی</span>
+            <span>معرفی و شروع</span>
           </button>
 
           <button
@@ -631,7 +631,51 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onOpenSplash }) 
             <HelpCircle className="w-4 h-4 text-[#2D9CFF]" />
             <span>تور تعاملی</span>
           </button>
+
+          {onOpenSplash && (
+            <button
+              id="settings-open-splash-btn"
+              onClick={onOpenSplash}
+              className="w-full h-11 rounded-2xl bg-white dark:bg-[#0B192C] border border-[#CBD5E1] dark:border-[#475569] text-[#1E293B] dark:text-[#F8FAFC] font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-98 hover:border-[#2D9CFF]"
+            >
+              <Sparkles className="w-4 h-4 text-[#2D9CFF]" />
+              <span>صفحه اسپلش (Splash)</span>
+            </button>
+          )}
         </div>
+      </div>
+
+      {/* Third-Party Integrations Card */}
+      <div className="p-5 rounded-3xl bg-white dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] space-y-3 shadow-2xs">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white flex items-center justify-center shadow-md shadow-teal-500/20">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-black text-[#1E293B] dark:text-[#F8FAFC]">
+                اتصالات Third-Party
+              </h3>
+              <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+                گوگل فیت، اپل هلث، استراوا، تلگرام و وب‌هوک
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
+          همگام‌سازی دوطرفه با ساعت‌های هوشمند، برنامه‌های ورزشی و دریافت یادآور مستقیم در چت تلگرام.
+        </p>
+
+        <button
+          id="settings-open-thirdparty-btn"
+          onClick={() => setCurrentScreen('third-party')}
+          className="w-full h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-98 shadow-md shadow-emerald-600/20"
+        >
+          <Sparkles className="w-4 h-4" />
+          <span>مدیریت اتصالات و وب‌هوک‌ها</span>
+          <ChevronLeft className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Android Widgets Hub & Simulator Card */}

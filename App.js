@@ -19,6 +19,10 @@ import { RewardsScreen } from './native/RewardsScreen';
 import { PartnerScreen } from './native/PartnerScreen';
 import { CloudScreen } from './native/CloudScreen';
 import { WidgetsScreen } from './native/WidgetsScreen';
+import { ThirdPartyScreen } from './native/ThirdPartyScreen';
+import { SplashScreen } from './native/SplashScreen';
+import { OnboardingScreen } from './native/OnboardingScreen';
+import { TourModal } from './native/TourModal';
 import { BadgesModal } from './native/BadgesModal';
 import { CelebrationModal } from './native/CelebrationModal';
 import { CustomAmountModal } from './native/CustomAmountModal';
@@ -36,7 +40,7 @@ import {
 import { getTodayKey } from './native/strings';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('home'); // 'home' | 'history' | 'rewards' | 'stats' | 'settings' | 'partner' | 'cloud' | 'widgets'
+  const [activeTab, setActiveTab] = useState('home'); // 'home' | 'history' | 'rewards' | 'stats' | 'settings' | 'partner' | 'cloud' | 'widgets' | 'third-party'
   const [appData, setAppData] = useState({
     name: 'دوست خوبم',
     goalGlasses: 8,
@@ -47,9 +51,13 @@ export default function App() {
     reminderEnabled: true,
     reminderIntervalMinutes: 60,
     hasCelebratedToday: false,
+    hasCompletedOnboarding: false,
   });
 
   const [isReady, setIsReady] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [tourVisible, setTourVisible] = useState(false);
   const [badgesVisible, setBadgesVisible] = useState(false);
   const [celebrationVisible, setCelebrationVisible] = useState(false);
   const [customAmountVisible, setCustomAmountVisible] = useState(false);
@@ -173,7 +181,55 @@ export default function App() {
   };
 
   // Determine whether to show main top header
-  const isFullScreenSubPage = ['rewards', 'partner', 'cloud', 'widgets'].includes(activeTab);
+  const isFullScreenSubPage = ['rewards', 'partner', 'cloud', 'widgets', 'third-party'].includes(activeTab);
+
+  if (showSplash) {
+    return (
+      <View style={[styles.rootContainer, { paddingTop: topInset }]}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="#EBF5FF"
+          translucent
+        />
+        <SplashScreen
+          onStart={() => {
+            setShowSplash(false);
+            if (!appData.hasCompletedOnboarding) {
+              setShowOnboarding(true);
+            }
+          }}
+          onSkip={() => {
+            setShowSplash(false);
+          }}
+        />
+      </View>
+    );
+  }
+
+  if (showOnboarding) {
+    return (
+      <View style={[styles.rootContainer, { paddingTop: topInset }]}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="#F2F6FA"
+          translucent
+        />
+        <OnboardingScreen
+          onFinish={async (onboardingData) => {
+            const updated = {
+              ...appData,
+              ...onboardingData,
+              hasCompletedOnboarding: true,
+            };
+            setAppData(updated);
+            await saveAppData(updated);
+            setShowOnboarding(false);
+            setTourVisible(true);
+          }}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.rootContainer, { paddingTop: topInset }]}>
@@ -188,10 +244,7 @@ export default function App() {
         <Header
           title={`سلام، ${appData.name || 'دوست خوبم'}`}
           subtitle="نوشیدن آب، یادآوری عشق به خودت"
-          onOpenRewards={() => setActiveTab('rewards')}
-          onOpenPartner={() => setActiveTab('partner')}
           onOpenCloud={() => setActiveTab('cloud')}
-          onOpenWidgets={() => setActiveTab('widgets')}
           onOpenSettings={() => setActiveTab('settings')}
         />
       )}
@@ -213,6 +266,8 @@ export default function App() {
             onOpenPartner={() => setActiveTab('partner')}
             onOpenCloud={() => setActiveTab('cloud')}
             onOpenWidgets={() => setActiveTab('widgets')}
+            onOpenThirdParty={() => setActiveTab('third-party')}
+            onOpenTour={() => setTourVisible(true)}
           />
         )}
 
@@ -248,6 +303,12 @@ export default function App() {
           />
         )}
 
+        {activeTab === 'third-party' && (
+          <ThirdPartyScreen
+            onBack={() => setActiveTab('home')}
+          />
+        )}
+
         {activeTab === 'history' && (
           <HistoryScreen
             logs={appData.logs || []}
@@ -272,6 +333,10 @@ export default function App() {
             reminderIntervalMinutes={appData.reminderIntervalMinutes || 60}
             onSaveSettings={handleSaveSettings}
             onResetToday={handleResetToday}
+            onShowSplash={() => setShowSplash(true)}
+            onShowOnboarding={() => setShowOnboarding(true)}
+            onShowTour={() => setTourVisible(true)}
+            onShowThirdParty={() => setActiveTab('third-party')}
           />
         )}
       </View>
@@ -392,6 +457,12 @@ export default function App() {
         goalGlasses={appData.goalGlasses || 8}
         streakDays={appData.streakDays || 1}
         onClose={() => setCelebrationVisible(false)}
+      />
+
+      {/* Guided Tour Modal */}
+      <TourModal
+        visible={tourVisible}
+        onClose={() => setTourVisible(false)}
       />
 
       {/* Custom Amount Modal */}

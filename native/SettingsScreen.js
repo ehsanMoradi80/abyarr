@@ -9,7 +9,7 @@ import {
   Switch,
   Alert,
 } from 'react-native';
-import { Settings, Check, RotateCcw, Save } from 'lucide-react-native';
+import { Settings, Check, RotateCcw, Save, Compass, Sparkles, Zap, Layers } from 'lucide-react-native';
 import { AppLogo } from './AppLogo';
 import { formatNumber, formatGlasses } from './strings';
 
@@ -23,6 +23,10 @@ export function SettingsScreen({
   reminderIntervalMinutes = 60,
   onSaveSettings,
   onResetToday,
+  onShowSplash,
+  onShowOnboarding,
+  onShowTour,
+  onShowThirdParty,
 }) {
   const [userName, setUserName] = useState(name);
   const [selectedGoal, setSelectedGoal] = useState(goalGlasses);
@@ -146,7 +150,59 @@ export function SettingsScreen({
         )}
       </View>
 
-      {/* 4. Save Button */}
+      {/* 4. Experience & Guides Card */}
+      <View style={styles.card}>
+        <Text style={styles.cardSectionTitle}>راهنما و امکانات بصری</Text>
+        <Text style={styles.inputLabel}>بازبینی تور آموزشی، اسپلش، یا اتصالات سلامت:</Text>
+
+        <View style={styles.uxGrid}>
+          {onShowTour && (
+            <TouchableOpacity
+              style={styles.uxButton}
+              onPress={onShowTour}
+              activeOpacity={0.7}
+            >
+              <Compass size={16} color="#DB2777" />
+              <Text style={styles.uxButtonText}>شروع تور تعاملی اپ</Text>
+            </TouchableOpacity>
+          )}
+
+          {onShowSplash && (
+            <TouchableOpacity
+              style={styles.uxButton}
+              onPress={onShowSplash}
+              activeOpacity={0.7}
+            >
+              <Sparkles size={16} color="#2D9CFF" />
+              <Text style={styles.uxButtonText}>مشاهده اسپلش اسکرین</Text>
+            </TouchableOpacity>
+          )}
+
+          {onShowOnboarding && (
+            <TouchableOpacity
+              style={styles.uxButton}
+              onPress={onShowOnboarding}
+              activeOpacity={0.7}
+            >
+              <Layers size={16} color="#10B981" />
+              <Text style={styles.uxButtonText}>تنظیم مجدد آنبوردینگ</Text>
+            </TouchableOpacity>
+          )}
+
+          {onShowThirdParty && (
+            <TouchableOpacity
+              style={styles.uxButton}
+              onPress={onShowThirdParty}
+              activeOpacity={0.7}
+            >
+              <Zap size={16} color="#0D9488" />
+              <Text style={styles.uxButtonText}>اتصالات Third-Party</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      {/* 5. Save Button */}
       <TouchableOpacity
         style={[styles.saveButton, savedSuccess && styles.saveButtonSuccess]}
         onPress={handleSave}
@@ -395,5 +451,29 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#94A3B8',
     marginTop: 5,
+  },
+  uxGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 6,
+  },
+  uxButton: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  uxButtonText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#334155',
   },
 });

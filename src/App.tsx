@@ -15,6 +15,8 @@ import { PartnerScreen } from './components/PartnerScreen';
 import { GoalCelebrationScreen } from './components/GoalCelebrationScreen';
 import { CelebrationMotivationModal } from './components/CelebrationMotivationModal';
 import { WidgetsScreen } from './components/WidgetsScreen';
+import { ThirdPartyScreen } from './components/ThirdPartyScreen';
+import { OfflineIndicator } from './components/OfflineIndicator';
 import { NooshNotificationModal } from './components/NooshMascot/NooshNotificationModal';
 import { trackEvent, trackScreenView } from './services/analytics';
 
@@ -154,9 +156,20 @@ export const App: React.FC = () => {
     );
   }
 
-  // 8. Main App Layout (Home, History, Stats, Settings + Bottom Navigation)
+  // 8. Full-Page Third-Party Integrations Screen
+  if (currentScreen === 'third-party') {
+    return (
+      <>
+        <Toast message={toastMessage} />
+        <ThirdPartyScreen />
+      </>
+    );
+  }
+
+  // 9. Main App Layout (Home, History, Stats, Settings + Bottom Navigation)
   return (
     <div className="min-h-screen bg-[#F2F6FA] dark:bg-[#0B192C] text-[#1E293B] dark:text-[#F8FAFC] flex flex-col justify-between selection:bg-[#2D9CFF] selection:text-white transition-colors duration-200">
+      <OfflineIndicator />
       <Toast message={toastMessage} />
       
       <CelebrationMotivationModal

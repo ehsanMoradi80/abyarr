@@ -17,6 +17,8 @@ import {
   Cloud,
   Smartphone,
   ChevronLeft,
+  Zap,
+  Compass,
 } from 'lucide-react-native';
 import { CompactStreakBar } from './CompactStreakBar';
 import { NooshMascotCard } from './NooshMascotCard';
@@ -38,6 +40,8 @@ export function HomeScreen({
   onOpenPartner,
   onOpenCloud,
   onOpenWidgets,
+  onOpenThirdParty,
+  onOpenTour,
 }) {
   const percentage = goalGlasses > 0 ? Math.min(Math.round((todayGlasses / goalGlasses) * 100), 100) : 0;
   const isGoalReached = todayGlasses >= goalGlasses && goalGlasses > 0;
@@ -122,6 +126,34 @@ export function HomeScreen({
           <View style={styles.hubTextCol}>
             <Text style={styles.hubTitle}>همگام ابر</Text>
             <Text style={styles.hubSubtitle}>پشتیبان امن</Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.hubCard}
+          onPress={onOpenThirdParty}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.hubIconCircle, { backgroundColor: '#CCFBF1' }]}>
+            <Zap size={18} color="#0D9488" />
+          </View>
+          <View style={styles.hubTextCol}>
+            <Text style={styles.hubTitle}>اتصالات</Text>
+            <Text style={styles.hubSubtitle}>گوگل فیت و هلث</Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.hubCard}
+          onPress={onOpenTour}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.hubIconCircle, { backgroundColor: '#FDF2F8' }]}>
+            <Compass size={18} color="#DB2777" />
+          </View>
+          <View style={styles.hubTextCol}>
+            <Text style={styles.hubTitle}>تور راهنما</Text>
+            <Text style={styles.hubSubtitle}>آشنایی با بخش‌ها</Text>
           </View>
         </TouchableOpacity>
       </View>

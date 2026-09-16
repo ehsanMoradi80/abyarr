@@ -79,7 +79,8 @@ export type AppScreen =
   | 'partner'
   | 'splash'
   | 'goal-celebration'
-  | 'widgets';
+  | 'widgets'
+  | 'third-party';
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 export type CelebrationTriggerType =
