@@ -9,6 +9,7 @@ import { CupSelector } from './CupSelector';
 import { TodayLogs } from './TodayLogs';
 import { CompactStreakBar } from './CompactStreakBar';
 import { DrinkWaveEffect } from './DrinkWaveEffect';
+import { NooshCompanionCard } from './NooshMascot/NooshCompanionCard';
 import { computeAchievements } from '../data/badges';
 import { strings, formatNumber, formatGlasses, relativeTimeFromNow } from '../constants/strings';
 
@@ -31,6 +32,7 @@ export const HomeScreen: React.FC = () => {
     partner,
     partnerRealtimeStatus,
     setCurrentScreen,
+    triggerNooshNotification,
   } = useApp();
 
   // Calculate streak status
@@ -115,6 +117,17 @@ export const HomeScreen: React.FC = () => {
         weekStatus={streakWeekStatus}
         onClick={() => setCurrentScreen('gamification')}
       />
+
+      {/* Health Companion Noosh Mascot Card */}
+      <div id="noosh-mascot-card">
+        <NooshCompanionCard
+          todayGlasses={todayTotalGlasses}
+          goalGlasses={goalGlasses}
+          lastDrinkTimestamp={lastDrinkTimestamp}
+          streakDays={streakDays}
+          onTriggerNotification={triggerNooshNotification}
+        />
+      </div>
 
       {/* Shared Partner Card (if connected) - Live via Supabase Realtime */}
       {partner && partner.status === 'active' && partnerRealtimeStatus && (

@@ -652,6 +652,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const startTour = () => {
     setCurrentScreen('main');
+    setActiveTab('home');
     setTimeout(() => {
       startAppTour();
     }, 200);
