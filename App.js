@@ -1,183 +1,358 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
+  Text,
   StatusBar,
   Platform,
-  BackHandler,
-  ActivityIndicator,
-  Text,
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
-import { WebView } from 'react-native-webview';
+import { Home, Calendar, BarChart3, Settings, Plus } from 'lucide-react-native';
+
+import { Header } from './native/Header';
+import { HomeScreen } from './native/HomeScreen';
+import { HistoryScreen } from './native/HistoryScreen';
+import { StatsScreen } from './native/StatsScreen';
+import { SettingsScreen } from './native/SettingsScreen';
+import { BadgesModal } from './native/BadgesModal';
+import { CelebrationModal } from './native/CelebrationModal';
+import { CustomAmountModal } from './native/CustomAmountModal';
+
+import {
+  loadAppData,
+  saveAppData,
+  calculateDailyStats,
+} from './native/storage';
 import {
   requestNotificationPermission,
   scheduleWaterReminder,
   cancelAllReminders,
 } from './native/notifications';
-
-const REMOTE_URL = 'https://ais-pre-ufdicntlroh3siayalojg7-517497980877.europe-west2.run.app';
-const LOCAL_ASSET_URL = 'file:///android_asset/web/inline.html';
+import { getTodayKey } from './native/strings';
 
 export default function App() {
-  const webViewRef = useRef(null);
-  const [canGoBack, setCanGoBack] = useState(false);
-  const [loadError, setLoadError] = useState(false);
-  const [useRemoteFallback, setUseRemoteFallback] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('home'); // 'home' | 'history' | 'stats' | 'settings'
+  const [appData, setAppData] = useState({
+    name: 'دوست خوبم',
+    goalGlasses: 8,
+    defaultCupMl: 250,
+    logs: [],
+    streakDays: 1,
+    lastDrinkTimestamp: 0,
+    reminderEnabled: true,
+    reminderIntervalMinutes: 60,
+    hasCelebratedToday: false,
+  });
 
-  // Calculate safe paddings for Android (Selfie camera / notch at top, Navigation buttons at bottom)
+  const [isReady, setIsReady] = useState(false);
+  const [badgesVisible, setBadgesVisible] = useState(false);
+  const [celebrationVisible, setCelebrationVisible] = useState(false);
+  const [customAmountVisible, setCustomAmountVisible] = useState(false);
+
+  // Dynamic safe area insets for Android & iOS
   const screenDimensions = Dimensions.get('screen');
   const windowDimensions = Dimensions.get('window');
-  const statusBarHeight = StatusBar.currentHeight || 36;
-  const topInset = Platform.OS === 'android' ? statusBarHeight : 0;
-  
+  const statusBarHeight = StatusBar.currentHeight || (Platform.OS === 'android' ? 28 : 44);
+  const topInset = Platform.OS === 'android' ? statusBarHeight : 44;
   const navBarDifference = Math.max(screenDimensions.height - windowDimensions.height, 0);
-  const bottomInset = Platform.OS === 'android' ? Math.max(navBarDifference, 28) : 0;
+  const bottomInset = Platform.OS === 'android' ? Math.max(navBarDifference, 16) : 24;
 
-  // Request notification permissions on launch
+  // Initialize data and notifications on launch
   useEffect(() => {
-    requestNotificationPermission();
+    async function init() {
+      try {
+        const data = await loadAppData();
+        if (data) {
+          setAppData(data);
+          if (data.reminderEnabled) {
+            scheduleWaterReminder(data.reminderIntervalMinutes || 60, data.name || '');
+          }
+        }
+        await requestNotificationPermission();
+      } catch (err) {
+        console.warn('Initialization error:', err);
+      } finally {
+        setIsReady(true);
+      }
+    }
+    init();
   }, []);
 
-  // Handle Android hardware back button
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
+  // Calculate daily stats from logs
+  const { todayLogs, totalGlasses, totalMl } = calculateDailyStats(appData.logs || []);
 
-    const backAction = () => {
-      if (canGoBack && webViewRef.current) {
-        webViewRef.current.goBack();
-        return true;
-      }
-      return false;
+  // Compute last drink timestamp
+  const lastDrinkTimestamp = todayLogs.length > 0
+    ? new Date(todayLogs[0].loggedAt).getTime()
+    : (appData.lastDrinkTimestamp || 0);
+
+  // Add water log
+  const handleAddWater = async (amountGlasses = 1, amountMl = 250) => {
+    const newLog = {
+      id: String(Date.now()),
+      amountGlasses,
+      amountMl,
+      loggedAt: new Date().toISOString(),
     };
 
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
-    return () => backHandler.remove();
-  }, [canGoBack]);
+    const updatedLogs = [newLog, ...(appData.logs || [])];
+    const newDailyStats = calculateDailyStats(updatedLogs);
 
-  // Handle messages from the Web App (Native Bridge)
-  const handleMessage = (event) => {
-    try {
-      const data = JSON.parse(event.nativeEvent.data);
-      if (data.type === 'SCHEDULE_ALARM') {
-        const interval = data.payload?.intervalMinutes || 60;
-        const name = data.payload?.userName || '';
-        scheduleWaterReminder(interval, name);
-      } else if (data.type === 'CANCEL_ALARM') {
-        cancelAllReminders();
-      }
-    } catch (err) {
-      console.warn('Native bridge message handling error:', err);
+    let hasCelebrated = appData.hasCelebratedToday;
+    if (newDailyStats.totalGlasses >= appData.goalGlasses && !hasCelebrated && appData.goalGlasses > 0) {
+      setCelebrationVisible(true);
+      hasCelebrated = true;
+    }
+
+    const updatedState = {
+      ...appData,
+      logs: updatedLogs,
+      lastDrinkTimestamp: Date.now(),
+      hasCelebratedToday: hasCelebrated,
+    };
+
+    setAppData(updatedState);
+    await saveAppData(updatedState);
+
+    // Reschedule reminder from this moment
+    if (appData.reminderEnabled) {
+      scheduleWaterReminder(appData.reminderIntervalMinutes || 60, appData.name || '');
     }
   };
 
-  // Decide current target URL
-  const currentSource = useRemoteFallback
-    ? { uri: REMOTE_URL }
-    : Platform.OS === 'android'
-    ? { uri: LOCAL_ASSET_URL }
-    : { uri: REMOTE_URL };
+  // Delete water log
+  const handleDeleteWater = async (logId) => {
+    const updatedLogs = (appData.logs || []).filter((l) => l.id !== logId);
+    const updatedState = {
+      ...appData,
+      logs: updatedLogs,
+    };
+    setAppData(updatedState);
+    await saveAppData(updatedState);
+  };
 
-  // Injected JS to set native safe area CSS variables & bridge indicator
-  const injectedJs = `
-    (function() {
-      window.isNativeAndroidApp = true;
-      document.documentElement.style.setProperty('--safe-top', '${topInset}px');
-      document.documentElement.style.setProperty('--safe-bottom', '${bottomInset}px');
-    })();
-    true;
-  `;
+  // Reset today's logs
+  const handleResetToday = async () => {
+    const todayKey = getTodayKey();
+    const updatedLogs = (appData.logs || []).filter((l) => {
+      const d = new Date(l.loggedAt);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}` !== todayKey;
+    });
+
+    const updatedState = {
+      ...appData,
+      logs: updatedLogs,
+      hasCelebratedToday: false,
+    };
+    setAppData(updatedState);
+    await saveAppData(updatedState);
+  };
+
+  // Save Settings
+  const handleSaveSettings = async (newSettings) => {
+    const updatedState = {
+      ...appData,
+      ...newSettings,
+    };
+    setAppData(updatedState);
+    await saveAppData(updatedState);
+
+    if (newSettings.reminderEnabled) {
+      await scheduleWaterReminder(newSettings.reminderIntervalMinutes, newSettings.name);
+    } else {
+      await cancelAllReminders();
+    }
+  };
 
   return (
-    <View style={styles.rootContainer}>
+    <View style={[styles.rootContainer, { paddingTop: topInset }]}>
       <StatusBar
         barStyle="dark-content"
         backgroundColor="#F2F6FA"
-        translucent={false}
+        translucent
       />
 
-      {/* Main WebView Container */}
-      <View
-        style={[
-          styles.contentWrapper,
-          {
-            paddingBottom: bottomInset,
-          },
-        ]}
-      >
-        <WebView
-          ref={webViewRef}
-          source={currentSource}
-          style={styles.webView}
-          javaScriptEnabled={true}
-          domStorageEnabled={true}
-          allowFileAccess={true}
-          allowFileAccessFromFileURLs={true}
-          allowUniversalAccessFromFileURLs={true}
-          mixedContentMode="always"
-          mediaPlaybackRequiresUserAction={false}
-          allowsInlineMediaPlayback={true}
-          originWhitelist={['*']}
-          scalesPageToFit={false}
-          bounces={false}
-          overScrollMode="never"
-          textZoom={100}
-          injectedJavaScriptBeforeContentLoaded={injectedJs}
-          onMessage={handleMessage}
-          onNavigationStateChange={(navState) => {
-            setCanGoBack(navState.canGoBack);
-          }}
-          onLoadStart={() => {
-            setLoadError(false);
-          }}
-          onLoadEnd={() => {
-            setIsLoading(false);
-          }}
-          onError={(syntheticEvent) => {
-            const { nativeEvent } = syntheticEvent;
-            console.warn('WebView load error:', nativeEvent);
-            if (!useRemoteFallback) {
-              // If local asset failed, fallback to remote live URL
-              setUseRemoteFallback(true);
-            } else {
-              setLoadError(true);
-            }
-          }}
-        />
+      {/* Top Header Bar */}
+      <Header
+        title={`سلام، ${appData.name || 'دوست خوبم'}`}
+        subtitle="نوشیدن آب، یادآوری عشق به خودت"
+        onOpenBadges={() => setBadgesVisible(true)}
+        onOpenReminders={() => setActiveTab('settings')}
+        onOpenSettings={() => setActiveTab('settings')}
+      />
 
-        {/* Loading Indicator */}
-        {isLoading && (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color="#2D9CFF" />
-            <Text style={styles.loadingText}>در حال بارگذاری نوش...</Text>
-          </View>
+      {/* Main Screen Content */}
+      <View style={styles.contentArea}>
+        {activeTab === 'home' && (
+          <HomeScreen
+            todayGlasses={totalGlasses}
+            goalGlasses={appData.goalGlasses || 8}
+            todayLogs={todayLogs}
+            streakDays={appData.streakDays || 1}
+            lastDrinkTimestamp={lastDrinkTimestamp}
+            userName={appData.name || ''}
+            onAddWater={handleAddWater}
+            onDeleteWater={handleDeleteWater}
+            onOpenCustomAmount={() => setCustomAmountVisible(true)}
+          />
         )}
 
-        {/* Error / Offline Retry Screen */}
-        {loadError && (
-          <View style={styles.errorOverlay}>
-            <Text style={styles.errorTitle}>عدم دسترسی به برنامه</Text>
-            <Text style={styles.errorSubtitle}>
-              لطفاً اتصال اینترنت خود را بررسی کرده و مجدداً تلاش کنید.
-            </Text>
-            <TouchableOpacity
-              style={styles.retryButton}
-              onPress={() => {
-                setLoadError(false);
-                setIsLoading(true);
-                if (webViewRef.current) {
-                  webViewRef.current.reload();
-                }
-              }}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.retryButtonText}>تلاش دوباره</Text>
-            </TouchableOpacity>
-          </View>
+        {activeTab === 'history' && (
+          <HistoryScreen
+            logs={appData.logs || []}
+            goalGlasses={appData.goalGlasses || 8}
+            onDeleteWater={handleDeleteWater}
+          />
+        )}
+
+        {activeTab === 'stats' && (
+          <StatsScreen
+            logs={appData.logs || []}
+            goalGlasses={appData.goalGlasses || 8}
+            streakDays={appData.streakDays || 1}
+          />
+        )}
+
+        {activeTab === 'settings' && (
+          <SettingsScreen
+            name={appData.name || ''}
+            goalGlasses={appData.goalGlasses || 8}
+            reminderEnabled={appData.reminderEnabled ?? true}
+            reminderIntervalMinutes={appData.reminderIntervalMinutes || 60}
+            onSaveSettings={handleSaveSettings}
+            onResetToday={handleResetToday}
+          />
         )}
       </View>
+
+      {/* Bottom Navigation Bar */}
+      <View style={[styles.navContainer, { paddingBottom: bottomInset }]}>
+        <View style={styles.navBar}>
+          {/* Settings Tab */}
+          <TouchableOpacity
+            style={styles.navItem}
+            onPress={() => setActiveTab('settings')}
+            activeOpacity={0.7}
+          >
+            <Settings
+              size={22}
+              color={activeTab === 'settings' ? '#2D9CFF' : '#94A3B8'}
+              strokeWidth={activeTab === 'settings' ? 2.4 : 1.8}
+            />
+            <Text
+              style={[
+                styles.navLabel,
+                activeTab === 'settings' && styles.navLabelActive,
+              ]}
+            >
+              تنظیمات
+            </Text>
+          </TouchableOpacity>
+
+          {/* Stats Tab */}
+          <TouchableOpacity
+            style={styles.navItem}
+            onPress={() => setActiveTab('stats')}
+            activeOpacity={0.7}
+          >
+            <BarChart3
+              size={22}
+              color={activeTab === 'stats' ? '#2D9CFF' : '#94A3B8'}
+              strokeWidth={activeTab === 'stats' ? 2.4 : 1.8}
+            />
+            <Text
+              style={[
+                styles.navLabel,
+                activeTab === 'stats' && styles.navLabelActive,
+              ]}
+            >
+              آمار
+            </Text>
+          </TouchableOpacity>
+
+          {/* Center Floating Quick Add Button */}
+          <View style={styles.quickAddWrapper}>
+            <TouchableOpacity
+              style={styles.quickAddBtn}
+              onPress={() => handleAddWater(1, 250)}
+              activeOpacity={0.8}
+            >
+              <Plus size={26} color="#FFFFFF" strokeWidth={2.8} />
+            </TouchableOpacity>
+          </View>
+
+          {/* History Tab */}
+          <TouchableOpacity
+            style={styles.navItem}
+            onPress={() => setActiveTab('history')}
+            activeOpacity={0.7}
+          >
+            <Calendar
+              size={22}
+              color={activeTab === 'history' ? '#2D9CFF' : '#94A3B8'}
+              strokeWidth={activeTab === 'history' ? 2.4 : 1.8}
+            />
+            <Text
+              style={[
+                styles.navLabel,
+                activeTab === 'history' && styles.navLabelActive,
+              ]}
+            >
+              تاریخچه
+            </Text>
+          </TouchableOpacity>
+
+          {/* Home Tab */}
+          <TouchableOpacity
+            style={styles.navItem}
+            onPress={() => setActiveTab('home')}
+            activeOpacity={0.7}
+          >
+            <Home
+              size={22}
+              color={activeTab === 'home' ? '#2D9CFF' : '#94A3B8'}
+              strokeWidth={activeTab === 'home' ? 2.4 : 1.8}
+            />
+            <Text
+              style={[
+                styles.navLabel,
+                activeTab === 'home' && styles.navLabelActive,
+              ]}
+            >
+              خانه
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Badges & Achievements Modal */}
+      <BadgesModal
+        visible={badgesVisible}
+        logs={appData.logs || []}
+        todayGlasses={totalGlasses}
+        goalGlasses={appData.goalGlasses || 8}
+        streakDays={appData.streakDays || 1}
+        onClose={() => setBadgesVisible(false)}
+      />
+
+      {/* Goal Celebration Modal */}
+      <CelebrationModal
+        visible={celebrationVisible}
+        goalGlasses={appData.goalGlasses || 8}
+        streakDays={appData.streakDays || 1}
+        onClose={() => setCelebrationVisible(false)}
+      />
+
+      {/* Custom Amount Modal */}
+      <CustomAmountModal
+        visible={customAmountVisible}
+        onClose={() => setCustomAmountVisible(false)}
+        onAddCustom={(glasses, ml) => handleAddWater(glasses, ml)}
+      />
     </View>
   );
 }
@@ -187,61 +362,59 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F2F6FA',
   },
-  contentWrapper: {
+  contentArea: {
     flex: 1,
-    backgroundColor: '#F2F6FA',
   },
-  webView: {
+  navContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  navBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    height: 60,
+    paddingHorizontal: 8,
+  },
+  navItem: {
     flex: 1,
-    backgroundColor: '#F2F6FA',
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#F2F6FA',
-    justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 10,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 13,
-    color: '#0284C7',
-    fontWeight: '700',
-    writingDirection: 'rtl',
-  },
-  errorOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#F2F6FA',
     justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-    zIndex: 20,
+    paddingVertical: 6,
   },
-  errorTitle: {
-    fontSize: 16,
+  navLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#94A3B8',
+    marginTop: 3,
+  },
+  navLabelActive: {
+    color: '#2D9CFF',
     fontWeight: '800',
-    color: '#1E293B',
-    marginBottom: 8,
-    writingDirection: 'rtl',
   },
-  errorSubtitle: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 20,
-    writingDirection: 'rtl',
-    maxWidth: 280,
+  quickAddWrapper: {
+    width: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  retryButton: {
+  quickAddBtn: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: '#2D9CFF',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 14,
-  },
-  retryButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '800',
-    fontSize: 13,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#2D9CFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
+    marginBottom: 14,
   },
 });

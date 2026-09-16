@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { Droplet, Droplets, Sparkles, Bell, Trash2 } from 'lucide-react-native';
 import { CompactStreakBar } from './CompactStreakBar';
+import { NooshMascotCard } from './NooshMascotCard';
 import { ProgressRing } from './ProgressRing';
 import { CupSelector } from './CupSelector';
 import { formatNumber, formatGlasses, formatTime, relativeTimeFromNow } from './strings';
@@ -17,6 +18,8 @@ export function HomeScreen({
   goalGlasses = 8,
   todayLogs = [],
   streakDays = 1,
+  lastDrinkTimestamp = 0,
+  userName = '',
   onAddWater,
   onDeleteWater,
   onOpenCustomAmount,
@@ -41,7 +44,15 @@ export function HomeScreen({
         todayCompleted={isGoalReached}
       />
 
-      {/* 2. Main Progress Ring Card */}
+      {/* 2. Noosh Health Companion Mascot Card */}
+      <NooshMascotCard
+        todayGlasses={todayGlasses}
+        goalGlasses={goalGlasses}
+        lastDrinkTimestamp={lastDrinkTimestamp}
+        userName={userName}
+      />
+
+      {/* 3. Main Progress Ring Card */}
       <View style={styles.progressCard}>
         <ProgressRing
           currentGlasses={todayGlasses}
