@@ -9,6 +9,7 @@ interface SplashScreenProps {
   onHaveAccount?: () => void;
   onClose?: () => void;
   isDismissable?: boolean;
+  autoTransitionMs?: number;
 }
 
 export const SplashScreen: React.FC<SplashScreenProps> = ({
@@ -16,9 +17,20 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
   onHaveAccount,
   onClose,
   isDismissable = false,
+  autoTransitionMs,
 }) => {
+  React.useEffect(() => {
+    if (!autoTransitionMs || !onStart) return;
+    const timer = setTimeout(() => {
+      onStart();
+    }, autoTransitionMs);
+    return () => clearTimeout(timer);
+  }, [autoTransitionMs, onStart]);
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-between overflow-hidden bg-gradient-to-b from-[#EBF5FF] via-[#D5EDFF] to-[#8ED3FF] text-[#1E293B] select-none">
+    <div 
+      className="fixed inset-0 z-50 flex flex-col justify-between overflow-hidden bg-gradient-to-b from-[#EBF5FF] via-[#D5EDFF] to-[#8ED3FF] text-[#1E293B] select-none"
+    >
       {/* Background Soft Glows and Water Bubbles */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {/* Top radial ambient glow */}
@@ -200,6 +212,17 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
 
         {/* Buttons Bar */}
         <div className="bg-white/90 dark:bg-[#1E293B]/95 backdrop-blur-md p-6 rounded-t-3xl border-t border-white/50 dark:border-slate-700 shadow-2xl max-w-md mx-auto w-full space-y-3">
+          {autoTransitionMs && (
+            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1 overflow-hidden mb-1">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: '100%' }}
+                transition={{ duration: autoTransitionMs / 1000, ease: 'linear' }}
+                className="h-full bg-gradient-to-r from-[#56B7FF] to-[#1E70E8]"
+              />
+            </div>
+          )}
+
           {onStart && (
             <motion.button
               whileHover={{ scale: 1.02 }}

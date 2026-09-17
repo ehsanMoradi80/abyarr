@@ -57,6 +57,7 @@ export const App: React.FC = () => {
   } = useApp();
 
   const [showSplashPreview, setShowSplashPreview] = useState<boolean>(false);
+  const [isInitialSplashActive, setIsInitialSplashActive] = useState<boolean>(true);
 
   useEffect(() => {
     void trackEvent('app_open');
@@ -70,6 +71,23 @@ export const App: React.FC = () => {
       path: getAnalyticsScreenPath(currentScreen, activeTab),
     });
   }, [activeTab, currentScreen]);
+
+  // Initial App Launch Splash Screen (smooth 2.2s auto transition or click to start)
+  if (isInitialSplashActive) {
+    return (
+      <SplashScreen
+        isDismissable={false}
+        autoTransitionMs={2200}
+        onStart={() => {
+          setIsInitialSplashActive(false);
+        }}
+        onHaveAccount={() => {
+          setIsInitialSplashActive(false);
+          setCurrentScreen('auth');
+        }}
+      />
+    );
+  }
 
   // If user requested splash screen preview from settings
   if (showSplashPreview) {

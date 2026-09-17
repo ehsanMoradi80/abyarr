@@ -23,7 +23,79 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   </head>
   <body class="bg-[#F2F6FA] dark:bg-[#0B192C] text-[#1E293B] dark:text-[#F8FAFC] antialiased selection:bg-[#2D9CFF]/20 select-none min-h-screen">
-    <div id="root" class="min-h-screen flex flex-col"></div>
+    <div id="root" class="min-h-screen flex flex-col">
+      <!-- Instant Pre-render Splash Screen (replaces instantly when React mounts) -->
+      <div style="position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(180deg, #EBF5FF 0%, #D5EDFF 50%, #8ED3FF 100%); font-family: system-ui, -apple-system, 'Vazirmatn', sans-serif; text-align: center; padding: 24px; z-index: 9999;">
+        <style>
+          @keyframes nooshPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+          }
+          @keyframes nooshRipple {
+            0% { transform: scale(0.8); opacity: 0.8; }
+            100% { transform: scale(1.6); opacity: 0; }
+          }
+          @keyframes nooshDots {
+            0%, 20% { opacity: 0.2; transform: translateY(0); }
+            50% { opacity: 1; transform: translateY(-4px); }
+            80%, 100% { opacity: 0.2; transform: translateY(0); }
+          }
+          .noosh-logo-box {
+            position: relative;
+            width: 110px;
+            height: 110px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+          }
+          .noosh-ripple-ring {
+            position: absolute;
+            inset: -15px;
+            border-radius: 9999px;
+            border: 2px solid rgba(45, 156, 255, 0.4);
+            animation: nooshRipple 2.2s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+          }
+          .noosh-drop-icon {
+            width: 88px;
+            height: 88px;
+            animation: nooshPulse 2.4s ease-in-out infinite;
+          }
+          .noosh-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 9999px;
+            background-color: #2D9CFF;
+            margin: 0 2px;
+          }
+        </style>
+        
+        <div class="noosh-logo-box">
+          <div class="noosh-ripple-ring"></div>
+          <svg class="noosh-drop-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="dropGradInit" x1="50" y1="10" x2="50" y2="90" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#56B7FF"/>
+                <stop offset="100%" stop-color="#1E70E8"/>
+              </linearGradient>
+            </defs>
+            <path d="M50 12 C50 12, 18 52, 18 68 C18 85.67 32.33 100 50 100 C67.67 100 82 85.67 82 68 C82 52, 50 12, 50 12 Z" fill="url(#dropGradInit)"/>
+            <path d="M50 82 C47.2 82 44.5 81.1 42.4 79.5 C38.6 76.5 38.6 70.8 42.4 67.8 L50 62 L57.6 67.8 C61.4 70.8 61.4 76.5 57.6 79.5 C55.5 81.1 52.8 82 50 82 Z" fill="#FFFFFF" opacity="0.95"/>
+            <ellipse cx="38" cy="52" rx="4" ry="7" transform="rotate(-30 38 52)" fill="#FFFFFF" opacity="0.45"/>
+          </svg>
+        </div>
+
+        <h1 style="margin: 0; font-size: 42px; font-weight: 900; color: #1E70E8; letter-spacing: -0.5px;">نوش</h1>
+        <p style="margin: 8px 0 20px; font-size: 15px; font-weight: 600; color: #0066CC;">نوشیدن آب، یادآوری عشق به خودت</p>
+
+        <div style="display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 10px;">
+          <span class="noosh-dot" style="animation: nooshDots 1.4s infinite ease-in-out 0s;"></span>
+          <span class="noosh-dot" style="animation: nooshDots 1.4s infinite ease-in-out 0.2s;"></span>
+          <span class="noosh-dot" style="animation: nooshDots 1.4s infinite ease-in-out 0.4s;"></span>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -12,11 +12,12 @@ import { DrinkWaveEffect } from './DrinkWaveEffect';
 import { NooshCompanionCard } from './NooshMascot/NooshCompanionCard';
 import { PWAInstallButton } from './PWAInstallButton';
 import { QuickHub } from './QuickHub';
+import { QuickHubBottomSheet } from './QuickHubBottomSheet';
 import { computeAchievements } from '../data/badges';
 import { strings, formatNumber, formatGlasses, relativeTimeFromNow } from '../constants/strings';
 
 export const HomeScreen: React.FC = () => {
-  const [quickMenuOpen, setQuickMenuOpen] = useState(false);
+  const [quickHubSheetOpen, setQuickHubSheetOpen] = useState(false);
   const {
     name,
     goalGlasses,
@@ -39,19 +40,6 @@ export const HomeScreen: React.FC = () => {
     startTour,
   } = useApp();
 
-  // Close menu on outside click
-  useEffect(() => {
-    if (!quickMenuOpen) return;
-    const handleDocumentClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('#quick-menu-container')) {
-        setQuickMenuOpen(false);
-      }
-    };
-    document.addEventListener('click', handleDocumentClick);
-    return () => document.removeEventListener('click', handleDocumentClick);
-  }, [quickMenuOpen]);
-
   // Calculate streak status
   const { streakDays, streakWeekStatus } = computeAchievements(
     logs,
@@ -70,86 +58,21 @@ export const HomeScreen: React.FC = () => {
         subtitle={strings.greeting}
         showLogo={true}
         right={
-          <div id="quick-menu-container" className="flex items-center gap-2 relative">
-            {/* Single Combined Quick Menu Button */}
-            <div className="relative">
-              <button
-                id="open-quick-menu-btn"
-                onClick={() => setQuickMenuOpen(!quickMenuOpen)}
-                aria-label="امکانات و ابزارها"
-                title="امکانات و ابزارها"
-                className={`p-2.5 rounded-2xl border transition-all cursor-pointer shadow-2xs flex items-center justify-center ${
-                  quickMenuOpen
-                    ? 'bg-[#2D9CFF] text-white border-[#2D9CFF]'
-                    : 'bg-white dark:bg-[#1E293B] border-[#E2E8F0] dark:border-[#334155] text-[#2D9CFF] hover:bg-[#E6F4FF] dark:hover:bg-[#1E3A5F]'
-                }`}
-              >
-                <LayoutGrid className="w-5 h-5" />
-              </button>
-
-              {/* Dropdown Menu */}
-              {quickMenuOpen && (
-                <div
-                  id="quick-menu-dropdown"
-                  className="absolute left-0 mt-2 w-52 p-2 rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 shadow-xl z-50 space-y-1 animate-in fade-in zoom-in-95 duration-100"
-                >
-                  <button
-                    onClick={() => { setQuickMenuOpen(false); setCurrentScreen('partner'); }}
-                    className="w-full px-3 py-2 rounded-xl text-right flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-emerald-500" />
-                      <span>همراه سلامت</span>
-                    </div>
-                    {partner && partner.status === 'active' && (
-                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    )}
-                  </button>
-
-                  <button
-                    onClick={() => { setQuickMenuOpen(false); setCurrentScreen('widgets'); }}
-                    className="w-full px-3 py-2 rounded-xl text-right flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Smartphone className="w-4 h-4 text-[#2D9CFF]" />
-                      <span>ویجت‌های گوشی</span>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => { setQuickMenuOpen(false); setCurrentScreen('third-party'); }}
-                    className="w-full px-3 py-2 rounded-xl text-right flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Watch className="w-4 h-4 text-teal-500" />
-                      <span>اتصال به ساعت</span>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => { setQuickMenuOpen(false); setCurrentScreen('gamification'); }}
-                    className="w-full px-3 py-2 rounded-xl text-right flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Trophy className="w-4 h-4 text-amber-500" />
-                      <span>مدال‌ها و افتخارات</span>
-                    </div>
-                  </button>
-
-                  <div className="h-px bg-slate-100 dark:bg-slate-800 my-1" />
-
-                  <button
-                    onClick={() => { setQuickMenuOpen(false); startTour(); }}
-                    className="w-full px-3 py-2 rounded-xl text-right flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2">
-                      <HelpCircle className="w-4 h-4 text-rose-500" />
-                      <span>راهنمای برنامه</span>
-                    </div>
-                  </button>
-                </div>
-              )}
-            </div>
+          <div id="quick-menu-container" className="flex items-center gap-2">
+            {/* Single Combined Quick Menu Button - Opens Mobile Bottom Sheet */}
+            <button
+              id="open-quick-menu-btn"
+              onClick={() => setQuickHubSheetOpen(true)}
+              aria-label="امکانات و ابزارها"
+              title="امکانات و ابزارها (باتم‌شیت)"
+              className={`p-2.5 rounded-2xl border transition-all cursor-pointer shadow-2xs flex items-center justify-center ${
+                quickHubSheetOpen
+                  ? 'bg-[#2D9CFF] text-white border-[#2D9CFF]'
+                  : 'bg-white dark:bg-[#1E293B] border-[#E2E8F0] dark:border-[#334155] text-[#2D9CFF] hover:bg-[#E6F4FF] dark:hover:bg-[#1E3A5F]'
+              }`}
+            >
+              <LayoutGrid className="w-5 h-5" />
+            </button>
 
             {/* Clerk Authentication */}
             <SignedIn>
@@ -206,6 +129,7 @@ export const HomeScreen: React.FC = () => {
         onOpenThirdParty={() => setCurrentScreen('third-party')}
         onOpenRewards={() => setCurrentScreen('gamification')}
         onOpenTour={startTour}
+        onOpenAll={() => setQuickHubSheetOpen(true)}
         isPartnerActive={Boolean(partner && partner.status === 'active')}
       />
 
@@ -297,6 +221,19 @@ export const HomeScreen: React.FC = () => {
         onDelete={deleteWater}
         onUndo={undoLastAdd}
         canUndo={Boolean(lastAddedLogId)}
+      />
+
+      {/* Mobile QuickHub Bottom Sheet */}
+      <QuickHubBottomSheet
+        isOpen={quickHubSheetOpen}
+        onClose={() => setQuickHubSheetOpen(false)}
+        onOpenPartner={() => setCurrentScreen('partner')}
+        onOpenWidgets={() => setCurrentScreen('widgets')}
+        onOpenThirdParty={() => setCurrentScreen('third-party')}
+        onOpenRewards={() => setCurrentScreen('gamification')}
+        onOpenCloud={() => setCurrentScreen('auth')}
+        onOpenTour={startTour}
+        isPartnerActive={Boolean(partner && partner.status === 'active')}
       />
     </div>
   );

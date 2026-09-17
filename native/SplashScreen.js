@@ -12,12 +12,19 @@ import { AppLogo } from './AppLogo';
 
 const { width } = Dimensions.get('window');
 
-export function SplashScreen({ onStart, onSkip }) {
+export function SplashScreen({ onStart, onSkip, autoTransitionMs = 2400 }) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.85)).current;
   const dropAnim = useRef(new Animated.Value(-20)).current;
 
   useEffect(() => {
+    let timer;
+    if (autoTransitionMs && onStart) {
+      timer = setTimeout(() => {
+        onStart();
+      }, autoTransitionMs);
+    }
+
     // Smooth entry sequence
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -48,7 +55,11 @@ export function SplashScreen({ onStart, onSkip }) {
         }),
       ])
     ).start();
-  }, []);
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [autoTransitionMs, onStart]);
 
   return (
     <View style={styles.container}>

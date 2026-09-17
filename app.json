@@ -7,7 +7,8 @@
     "icon": "./public/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "backgroundColor": "#168C9B",
+      "image": "./public/icon.png",
+      "backgroundColor": "#EBF5FF",
       "resizeMode": "contain"
     },
     "ios": {
@@ -17,7 +18,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./public/icon.png",
-        "backgroundColor": "#168C9B"
+        "backgroundColor": "#2D9CFF"
       },
       "package": "com.abyar.water",
       "permissions": [

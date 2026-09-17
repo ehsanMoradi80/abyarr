@@ -8,6 +8,7 @@ interface QuickHubProps {
   onOpenThirdParty: () => void;
   onOpenRewards: () => void;
   onOpenTour: () => void;
+  onOpenAll?: () => void;
   isPartnerActive?: boolean;
 }
 
@@ -17,6 +18,7 @@ export const QuickHub: React.FC<QuickHubProps> = ({
   onOpenThirdParty,
   onOpenRewards,
   onOpenTour,
+  onOpenAll,
   isPartnerActive = false,
 }) => {
   const items = [
@@ -78,9 +80,19 @@ export const QuickHub: React.FC<QuickHubProps> = ({
         <h3 className="text-xs font-bold text-[#64748B] dark:text-[#94A3B8]">
           امکانات و ابزارهای سریع
         </h3>
-        <span className="text-[11px] text-[#94A3B8] dark:text-[#64748B]">
-          دسترسی یک‌لمسی
-        </span>
+        {onOpenAll ? (
+          <button
+            onClick={onOpenAll}
+            className="text-[11px] font-bold text-[#2D9CFF] hover:text-[#0066CC] dark:hover:text-[#56B7FF] transition-colors cursor-pointer flex items-center gap-0.5"
+          >
+            <span>مشاهده همه (باتم‌شیت)</span>
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+        ) : (
+          <span className="text-[11px] text-[#94A3B8] dark:text-[#64748B]">
+            دسترسی یک‌لمسی
+          </span>
+        )}
       </div>
 
       {/* Horizontal scrollable row for mobile & tablet */}
