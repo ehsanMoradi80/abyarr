@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { ChevronRight, Mail, Lock, User, Cloud, ShieldCheck, CheckCircle2, Sparkles } from 'lucide-react';
 import { useSignIn, useSignUp, isClerkConfigured } from '../lib/clerk';
 import { useApp } from '../context/AppContext';
+import { getSupabaseClient, isSupabaseClientConfigured } from '../services/supabaseClient';
 
 type AuthMode = 'signin' | 'signup';
 type Step = 'main' | 'verify-email';
@@ -36,21 +37,28 @@ export const AuthScreen: React.FC = () => {
     try {
       if (isClerkConfigured) {
         window.location.href = `/.clerk/sign-in?strategy=oauth_google&redirect_url=${encodeURIComponent(window.location.origin)}`;
-      } else {
-        if (!signInLoaded || !signIn) return;
-        setLoading(true);
-        const result = await signIn.create({
-          identifier: 'user@google.com',
-          password: 'demo-google-login',
-        });
-        if (result.status === 'complete') {
-          await setActive({ session: result.createdSessionId });
-          showToast('ورود با حساب گوگل با موفقیت انجام شد');
-          setCurrentScreen('main');
+        return;
+      }
+
+      if (isSupabaseClientConfigured()) {
+        const supabase = getSupabaseClient();
+        if (supabase) {
+          setLoading(true);
+          const { error: oauthError } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: window.location.origin,
+            },
+          });
+          if (oauthError) throw oauthError;
+          return;
         }
       }
+
+      // If no cloud auth provider credentials configured yet:
+      setError('برای فعال‌سازی ورود با گوگل، اطلاعات Supabase یا Clerk را در تنظیمات .env وارد کنید.');
     } catch (err: any) {
-      setError('خطا در اتصال به گوگل');
+      setError(err?.message || 'خطا در اتصال به گوگل');
     } finally {
       setLoading(false);
     }
@@ -75,6 +83,13 @@ export const AuthScreen: React.FC = () => {
 
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
+        try {
+          await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identifier: email.trim() || username.trim(), name: firstName.trim() || undefined }),
+          });
+        } catch {}
         showToast('ورود با موفقیت انجام شد');
         setCurrentScreen('main');
       } else if (result.status === 'needs_first_factor') {
@@ -129,7 +144,14 @@ export const AuthScreen: React.FC = () => {
 
       if (pending.status === 'complete') {
         await setActiveSignUp({ session: pending.createdSessionId });
-        showToast('ثبت نام با موفقیت انجام شد');
+        try {
+          await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identifier: email.trim() || username.trim(), name: firstName.trim() || undefined }),
+          });
+        } catch {}
+        showToast('ثبت‌نام با موفقیت انجام شد');
         setCurrentScreen('main');
       } else if (pending.status === 'missing_requirements') {
         const verifiable = pending.verifications?.emailAddress?.status;
@@ -163,6 +185,13 @@ export const AuthScreen: React.FC = () => {
         const result = await signUp.attemptEmailAddressVerification({ code: code.trim() });
         if (result.status === 'complete') {
           await setActiveSignUp({ session: result.createdSessionId });
+          try {
+            await fetch('/api/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ identifier: email.trim() || username.trim(), name: firstName.trim() || undefined }),
+            });
+          } catch {}
           showToast('ثبت نام با موفقیت انجام شد');
           setCurrentScreen('main');
         }
@@ -171,6 +200,13 @@ export const AuthScreen: React.FC = () => {
         const result = await signIn.attemptFirstFactor({ strategy: 'email_code', code: code.trim() });
         if (result.status === 'complete') {
           await setActive({ session: result.createdSessionId });
+          try {
+            await fetch('/api/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ identifier: email.trim() || username.trim(), name: firstName.trim() || undefined }),
+            });
+          } catch {}
           showToast('ورود با موفقیت انجام شد');
           setCurrentScreen('main');
         }
