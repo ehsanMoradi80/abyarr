@@ -10,7 +10,10 @@ import {
 } from '@clerk/clerk-react';
 import { LogOut, User as UserIcon } from 'lucide-react';
 
-const envKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
+const envKey = (
+  import.meta.env?.VITE_CLERK_PUBLISHABLE_KEY ||
+  (typeof process !== 'undefined' && (process.env?.VITE_CLERK_PUBLISHABLE_KEY || process.env?.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY))
+) as string | undefined;
 
 // Clerk is configured only if a real publishable key is provided (not empty, not placeholder)
 export const isClerkConfigured = Boolean(

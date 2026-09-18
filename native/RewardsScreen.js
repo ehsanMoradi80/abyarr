@@ -19,143 +19,213 @@ import {
   Star,
   Target,
 } from 'lucide-react-native';
+import { formatNumber, formatGlasses } from './strings';
 
-const REWARD_BADGES = [
-  {
-    id: 'first_sip',
-    title: 'نخستین جرعه',
-    description: 'ثبت اولین لیوان آب در برنامه آب‌یار',
-    category: 'milestone',
-    xp: 50,
-    iconColor: '#2D9CFF',
-    iconBg: '#E6F4FF',
-    unlocked: true,
-  },
-  {
-    id: 'streak_3',
-    title: 'تداوم ۳ روزه',
-    description: 'نوشیدن منظم آب برای سه روز متوالی',
-    category: 'streak',
-    xp: 100,
-    iconColor: '#F59E0B',
-    iconBg: '#FEF3C7',
-    unlocked: true,
-  },
-  {
-    id: 'streak_7',
-    title: 'هفته طلایی',
-    description: 'یک هفته کامل تداوم و تکمیل هدف نوشیدن آب',
-    category: 'streak',
-    xp: 250,
-    iconColor: '#EAB308',
-    iconBg: '#FEF9C3',
-    unlocked: true,
-  },
-  {
-    id: 'streak_30',
-    title: 'ماه پایدار',
-    description: '۳۰ روز نوشیدن پایدار و تبدیل به عادت روزمره',
-    category: 'streak',
-    xp: 600,
-    iconColor: '#8B5CF6',
-    iconBg: '#EDE9FE',
-    unlocked: false,
-  },
-  {
-    id: 'perfect_day',
-    title: 'قهرمان ۸ لیوان',
-    description: 'تکمیل ۱۰۰٪ هدف روزانه آب در یک روز',
-    category: 'volume',
-    xp: 150,
-    iconColor: '#10B981',
-    iconBg: '#D1FAE5',
-    unlocked: true,
-  },
-  {
-    id: 'early_bird',
-    title: 'سحرخیز شاداب',
-    description: 'نوشیدن اولین لیوان آب قبل از ساعت ۹ صبح',
-    category: 'timing',
-    xp: 80,
-    iconColor: '#06B6D4',
-    iconBg: '#CFFAFE',
-    unlocked: true,
-  },
-  {
-    id: 'night_owl',
-    title: 'هیدراته تا شب',
-    description: 'ثبت آب بعد از ساعت ۸ شب برای حفظ رطوبت شبانه',
-    category: 'timing',
-    xp: 80,
-    iconColor: '#6366F1',
-    iconBg: '#EEF2FF',
-    unlocked: false,
-  },
-  {
-    id: 'volume_10k',
-    title: 'باشگاه ۱۰ لیتر',
-    description: 'مجموع مصرف ۱۰,۰۰۰ میلی‌لیتر آب در طول زمان',
-    category: 'volume',
-    xp: 300,
-    iconColor: '#3B82F6',
-    iconBg: '#DBEAFE',
-    unlocked: false,
-  },
-  {
-    id: 'golden_partner',
-    title: 'همراه نمونه',
-    description: 'اتصال به همراه سلامت و نوشیدن همزمان آب',
-    category: 'milestone',
-    xp: 200,
-    iconColor: '#EC4899',
-    iconBg: '#FCE7F3',
-    unlocked: true,
-  },
-];
-
-const DAILY_QUESTS = [
-  {
-    id: 'morning_water',
-    title: 'نوشیدن آب صبحگاهی',
-    desc: 'حداقل ۱ لیوان قبل از ساعت ۱۲ ظهر',
-    xp: 40,
-    completed: true,
-  },
-  {
-    id: 'half_goal',
-    title: 'نیمه راه سلامتی',
-    desc: 'رسیدن به حداقل ۵۰٪ هدف روزانه',
-    xp: 60,
-    completed: true,
-  },
-  {
-    id: 'full_goal',
-    title: 'هدف کامل روزانه',
-    desc: 'تکمیل ۱۰۰٪ هدف امروز (۸ لیوان)',
-    xp: 100,
-    completed: false,
-  },
+const LEVELS = [
+  { level: 1, name: 'نوآموز آب', minXP: 0, maxXP: 150 },
+  { level: 2, name: 'جوینده رطوبت', minXP: 150, maxXP: 400 },
+  { level: 3, name: 'همگام با قطره', minXP: 400, maxXP: 800 },
+  { level: 4, name: 'سفیر تندرستی', minXP: 800, maxXP: 1500 },
+  { level: 5, name: 'قهرمان آب', minXP: 1500, maxXP: 2500 },
+  { level: 6, name: 'استاد هیدراتاسیون', minXP: 2500, maxXP: 5000 },
 ];
 
 export function RewardsScreen({
   onBack,
-  todayGlasses = 4,
+  logs = [],
+  todayGlasses = 0,
   goalGlasses = 8,
-  streakDays = 5,
+  streakDays = 1,
+  partnerConnected = false,
 }) {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedBadge, setSelectedBadge] = useState(null);
 
-  // Compute stats
-  const unlockedCount = REWARD_BADGES.filter((b) => b.unlocked).length;
-  const currentXP = 850 + todayGlasses * 25;
-  const nextLevelXP = 1200;
-  const levelProgress = Math.min(Math.round((currentXP / nextLevelXP) * 100), 100);
+  // 1. Calculate lifetime volumes from actual logs
+  const safeLogs = Array.isArray(logs) ? logs : [];
+  const totalLifetimeGlasses = safeLogs.reduce((sum, item) => sum + (item.amountGlasses || 1), 0);
+  const totalLifetimeMl = safeLogs.reduce((sum, item) => sum + (item.amountMl || 250), 0);
+
+  // Today's logs analysis
+  const todayKey = new Date().toISOString().split('T')[0];
+  const todayLogs = safeLogs.filter((log) => {
+    if (!log.loggedAt) return false;
+    return log.loggedAt.startsWith(todayKey);
+  });
+
+  const hasMorningDrink = todayLogs.some((log) => {
+    const hours = new Date(log.loggedAt).getHours();
+    return hours < 12;
+  });
+
+  const hasEarlyBirdDrink = safeLogs.some((log) => {
+    const hours = new Date(log.loggedAt).getHours();
+    return hours < 9;
+  });
+
+  const hasNightDrink = safeLogs.some((log) => {
+    const hours = new Date(log.loggedAt).getHours();
+    return hours >= 20;
+  });
+
+  // 2. Real Daily Quests (Evaluated against today's actual performance)
+  const dailyQuests = [
+    {
+      id: 'morning_water',
+      title: 'نوشیدن آب صبحگاهی',
+      desc: 'حداقل ۱ لیوان قبل از ساعت ۱۲ ظهر',
+      xp: 40,
+      completed: hasMorningDrink,
+    },
+    {
+      id: 'half_goal',
+      title: 'نیمه راه سلامتی',
+      desc: `رسیدن به حداقل ۵۰٪ هدف روزانه (${formatNumber(Math.ceil(goalGlasses / 2))} لیوان)`,
+      xp: 60,
+      completed: todayGlasses >= Math.ceil(goalGlasses / 2) && todayGlasses > 0,
+    },
+    {
+      id: 'full_goal',
+      title: 'هدف کامل روزانه',
+      desc: `تکمیل ۱۰۰٪ هدف امروز (${formatNumber(goalGlasses)} لیوان)`,
+      xp: 100,
+      completed: todayGlasses >= goalGlasses && goalGlasses > 0,
+    },
+  ];
+
+  const completedQuestsCount = dailyQuests.filter((q) => q.completed).length;
+  const questsXP = dailyQuests.reduce((sum, q) => sum + (q.completed ? q.xp : 0), 0);
+
+  // 3. Real Badges with dynamic evaluations
+  const rewardBadges = [
+    {
+      id: 'first_sip',
+      title: 'نخستین جرعه',
+      description: 'ثبت اولین لیوان آب در برنامه آب‌یار',
+      category: 'milestone',
+      xp: 50,
+      iconColor: '#2D9CFF',
+      iconBg: '#E6F4FF',
+      unlocked: safeLogs.length >= 1,
+      progressText: safeLogs.length >= 1 ? 'کسب شده' : 'هنوز لیوانی ثبت نشده',
+    },
+    {
+      id: 'streak_3',
+      title: 'تداوم ۳ روزه',
+      description: 'نوشیدن منظم آب برای سه روز متوالی',
+      category: 'streak',
+      xp: 100,
+      iconColor: '#F59E0B',
+      iconBg: '#FEF3C7',
+      unlocked: streakDays >= 3,
+      progressText: `${formatNumber(streakDays)} از ۳ روز`,
+    },
+    {
+      id: 'streak_7',
+      title: 'هفته طلایی',
+      description: 'یک هفته کامل تداوم و تکمیل هدف نوشیدن آب',
+      category: 'streak',
+      xp: 250,
+      iconColor: '#EAB308',
+      iconBg: '#FEF9C3',
+      unlocked: streakDays >= 7,
+      progressText: `${formatNumber(streakDays)} از ۷ روز`,
+    },
+    {
+      id: 'streak_30',
+      title: 'ماه پایدار',
+      description: '۳۰ روز نوشیدن پایدار و تبدیل به عادت روزمره',
+      category: 'streak',
+      xp: 600,
+      iconColor: '#8B5CF6',
+      iconBg: '#EDE9FE',
+      unlocked: streakDays >= 30,
+      progressText: `${formatNumber(streakDays)} از ۳۰ روز`,
+    },
+    {
+      id: 'perfect_day',
+      title: 'قهرمان آب روزانه',
+      description: `تکمیل ۱۰۰٪ هدف روزانه آب (${formatGlasses(goalGlasses)})`,
+      category: 'volume',
+      xp: 150,
+      iconColor: '#10B981',
+      iconBg: '#D1FAE5',
+      unlocked: todayGlasses >= goalGlasses && goalGlasses > 0,
+      progressText: `${formatNumber(todayGlasses)} از ${formatNumber(goalGlasses)} لیوان`,
+    },
+    {
+      id: 'early_bird',
+      title: 'سحرخیز شاداب',
+      description: 'نوشیدن اولین لیوان آب قبل از ساعت ۹ صبح',
+      category: 'timing',
+      xp: 80,
+      iconColor: '#06B6D4',
+      iconBg: '#CFFAFE',
+      unlocked: hasEarlyBirdDrink,
+      progressText: hasEarlyBirdDrink ? 'کسب شده' : 'قبل از ۹ صبح ثبت کنید',
+    },
+    {
+      id: 'night_owl',
+      title: 'هیدراته تا شب',
+      description: 'ثبت آب بعد از ساعت ۸ شب برای رطوبت‌رسانی شبانه',
+      category: 'timing',
+      xp: 80,
+      iconColor: '#6366F1',
+      iconBg: '#EEF2FF',
+      unlocked: hasNightDrink,
+      progressText: hasNightDrink ? 'کسب شده' : 'بعد از ۸ شب ثبت کنید',
+    },
+    {
+      id: 'volume_10k',
+      title: 'باشگاه ۱۰ لیتر',
+      description: 'مجموع مصرف ۱۰,۰۰۰ میلی‌لیتر آب در طول زمان',
+      category: 'volume',
+      xp: 300,
+      iconColor: '#3B82F6',
+      iconBg: '#DBEAFE',
+      unlocked: totalLifetimeMl >= 10000,
+      progressText: `${formatNumber(totalLifetimeMl)} از ۱۰,۰۰۰ میلی‌لیتر`,
+    },
+    {
+      id: 'golden_partner',
+      title: 'همراه نمونه',
+      description: 'اتصال فعال به همراه سلامت برای پایش مشترک',
+      category: 'milestone',
+      xp: 200,
+      iconColor: '#EC4899',
+      iconBg: '#FCE7F3',
+      unlocked: Boolean(partnerConnected),
+      progressText: partnerConnected ? 'متصل شد' : 'همراه سلامت را متصل کنید',
+    },
+  ];
+
+  const unlockedCount = rewardBadges.filter((b) => b.unlocked).length;
+  const badgesEarnedXP = rewardBadges.reduce((sum, b) => sum + (b.unlocked ? b.xp : 0), 0);
+
+  // 4. Real Cumulative XP Calculation
+  const waterLogXP = totalLifetimeGlasses * 20;
+  const streakBonusXP = Math.max(0, streakDays - 1) * 30;
+  const currentXP = waterLogXP + streakBonusXP + badgesEarnedXP + questsXP;
+
+  // 5. Dynamic Real Level
+  const currentLevelObj =
+    LEVELS.find((lvl) => currentXP >= lvl.minXP && currentXP < lvl.maxXP) ||
+    LEVELS[LEVELS.length - 1];
+  const nextLevelObj =
+    LEVELS.find((lvl) => lvl.level === currentLevelObj.level + 1) || currentLevelObj;
+
+  const xpInCurrentLevel = currentXP - currentLevelObj.minXP;
+  const levelRange = Math.max(1, currentLevelObj.maxXP - currentLevelObj.minXP);
+  const levelProgress =
+    nextLevelObj.level === currentLevelObj.level
+      ? 100
+      : Math.min(Math.round((xpInCurrentLevel / levelRange) * 100), 100);
+  const xpToNext = Math.max(0, currentLevelObj.maxXP - currentXP);
 
   const filteredBadges =
     selectedFilter === 'all'
-      ? REWARD_BADGES
-      : REWARD_BADGES.filter((b) => b.category === selectedFilter);
+      ? rewardBadges
+      : rewardBadges.filter((b) => b.category === selectedFilter);
 
   return (
     <View style={styles.container}>
@@ -174,7 +244,7 @@ export function RewardsScreen({
         </View>
         <View style={styles.streakPill}>
           <Flame size={15} color="#EA580C" />
-          <Text style={styles.streakText}>{streakDays} روز</Text>
+          <Text style={styles.streakText}>{formatNumber(streakDays)} روز</Text>
         </View>
       </View>
 
@@ -187,15 +257,21 @@ export function RewardsScreen({
           <View style={styles.levelHeader}>
             <View style={styles.levelBadge}>
               <Award size={18} color="#2D9CFF" />
-              <Text style={styles.levelBadgeText}>سطح ۴: سفیر تندرستی</Text>
+              <Text style={styles.levelBadgeText}>
+                سطح {formatNumber(currentLevelObj.level)}: {currentLevelObj.name}
+              </Text>
             </View>
             <View style={styles.xpTextWrap}>
               <Zap size={14} color="#F59E0B" />
-              <Text style={styles.xpText}>{currentXP} XP</Text>
+              <Text style={styles.xpText}>{formatNumber(currentXP)} XP</Text>
             </View>
           </View>
 
-          <Text style={styles.levelTitle}>تنها {nextLevelXP - currentXP} XP تا سطح ۵ (قهرمان آب)</Text>
+          <Text style={styles.levelTitle}>
+            {nextLevelObj.level === currentLevelObj.level
+              ? 'شما به بالاترین سطح هیدراتاسیون رسیده‌اید!'
+              : `تنها ${formatNumber(xpToNext)} XP تا سطح ${formatNumber(nextLevelObj.level)} (${nextLevelObj.name})`}
+          </Text>
 
           {/* Progress Bar */}
           <View style={styles.progressTrack}>
@@ -203,8 +279,10 @@ export function RewardsScreen({
           </View>
 
           <View style={styles.progressLabels}>
-            <Text style={styles.progressLabelLeft}>{levelProgress}٪ تکمیل شده</Text>
-            <Text style={styles.progressLabelRight}>{currentXP} / {nextLevelXP} XP</Text>
+            <Text style={styles.progressLabelLeft}>{formatNumber(levelProgress)}٪ در این سطح</Text>
+            <Text style={styles.progressLabelRight}>
+              {formatNumber(currentXP)} / {formatNumber(currentLevelObj.maxXP)} XP
+            </Text>
           </View>
         </View>
 
@@ -215,11 +293,13 @@ export function RewardsScreen({
               <Target size={18} color="#2D9CFF" />
               <Text style={styles.sectionTitle}>مأموریت‌های امروز</Text>
             </View>
-            <Text style={styles.sectionMeta}>۲ از ۳ تکمیل شده</Text>
+            <Text style={styles.sectionMeta}>
+              {formatNumber(completedQuestsCount)} از {formatNumber(dailyQuests.length)} تکمیل شده
+            </Text>
           </View>
 
           <View style={styles.questsList}>
-            {DAILY_QUESTS.map((quest) => (
+            {dailyQuests.map((quest) => (
               <View
                 key={quest.id}
                 style={[
@@ -236,7 +316,7 @@ export function RewardsScreen({
 
                 <View style={styles.questRewardWrap}>
                   <View style={styles.questXpBadge}>
-                    <Text style={styles.questXpText}>+{quest.xp} XP</Text>
+                    <Text style={styles.questXpText}>+{formatNumber(quest.xp)} XP</Text>
                   </View>
                   {quest.completed ? (
                     <CheckCircle2 size={20} color="#10B981" />
@@ -257,7 +337,7 @@ export function RewardsScreen({
               <Text style={styles.sectionTitle}>نشان‌های افتخار</Text>
             </View>
             <Text style={styles.sectionMeta}>
-              {unlockedCount} از {REWARD_BADGES.length} باز شده
+              {formatNumber(unlockedCount)} از {formatNumber(rewardBadges.length)} باز شده
             </Text>
           </View>
 
@@ -321,12 +401,16 @@ export function RewardsScreen({
                 <Text style={styles.badgeTitle} numberOfLines={1}>
                   {badge.title}
                 </Text>
-                <Text style={styles.badgeXpText}>+{badge.xp} XP</Text>
-                {badge.unlocked && (
+                <Text style={styles.badgeXpText}>+{formatNumber(badge.xp)} XP</Text>
+                {badge.unlocked ? (
                   <View style={styles.badgeCheckPill}>
                     <CheckCircle2 size={11} color="#10B981" />
                     <Text style={styles.badgeCheckText}>کسب شده</Text>
                   </View>
+                ) : (
+                  <Text style={styles.badgeProgressHint} numberOfLines={1}>
+                    {badge.progressText}
+                  </Text>
                 )}
               </TouchableOpacity>
             ))}
@@ -368,12 +452,12 @@ export function RewardsScreen({
                 <View style={styles.modalMetaRow}>
                   <View style={styles.modalMetaItem}>
                     <Zap size={14} color="#F59E0B" />
-                    <Text style={styles.modalMetaText}>+{selectedBadge.xp} XP جایزه</Text>
+                    <Text style={styles.modalMetaText}>+{formatNumber(selectedBadge.xp)} XP جایزه</Text>
                   </View>
                   <View style={styles.modalMetaItem}>
                     <Sparkles size={14} color="#2D9CFF" />
                     <Text style={styles.modalMetaText}>
-                      {selectedBadge.unlocked ? 'فعال در کارنامه' : 'هنوز باز نشده'}
+                      {selectedBadge.unlocked ? 'فعال در کارنامه' : selectedBadge.progressText}
                     </Text>
                   </View>
                 </View>
@@ -686,6 +770,12 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: '#10B981',
     fontWeight: '700',
+  },
+  badgeProgressHint: {
+    fontSize: 8,
+    color: '#94A3B8',
+    marginTop: 4,
+    textAlign: 'center',
   },
   modalBackdrop: {
     flex: 1,

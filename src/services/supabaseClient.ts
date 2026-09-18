@@ -3,8 +3,15 @@ import { createClient, SupabaseClient, RealtimeChannel } from '@supabase/supabas
 let supabaseInstance: SupabaseClient | null = null;
 
 export function getSupabaseClient(): SupabaseClient | null {
-  const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+  const url = (
+    import.meta.env?.VITE_SUPABASE_URL ||
+    (typeof process !== 'undefined' && (process.env?.VITE_SUPABASE_URL || process.env?.EXPO_PUBLIC_SUPABASE_URL || process.env?.SUPABASE_URL))
+  ) as string | undefined;
+
+  const anonKey = (
+    import.meta.env?.VITE_SUPABASE_ANON_KEY ||
+    (typeof process !== 'undefined' && (process.env?.VITE_SUPABASE_ANON_KEY || process.env?.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env?.SUPABASE_ANON_KEY))
+  ) as string | undefined;
 
   if (!url || !anonKey) {
     return null;
@@ -28,7 +35,10 @@ export function getSupabaseClient(): SupabaseClient | null {
 }
 
 export const isSupabaseClientConfigured = (): boolean => {
-  return Boolean(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
+  return Boolean(
+    (import.meta.env?.VITE_SUPABASE_URL || (typeof process !== 'undefined' && (process.env?.VITE_SUPABASE_URL || process.env?.EXPO_PUBLIC_SUPABASE_URL || process.env?.SUPABASE_URL))) &&
+    (import.meta.env?.VITE_SUPABASE_ANON_KEY || (typeof process !== 'undefined' && (process.env?.VITE_SUPABASE_ANON_KEY || process.env?.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env?.SUPABASE_ANON_KEY)))
+  );
 };
 
 export type RealtimeStatus = {

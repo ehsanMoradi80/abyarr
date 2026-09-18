@@ -382,9 +382,11 @@ export default function App() {
 
         {activeTab === 'rewards' && (
           <RewardsScreen
+            logs={appData.logs || []}
             todayGlasses={totalGlasses}
             goalGlasses={appData.goalGlasses || 8}
             streakDays={appData.streakDays || 1}
+            partnerConnected={appData.partner?.status === 'active'}
             onBack={() => setActiveTab('home')}
           />
         )}

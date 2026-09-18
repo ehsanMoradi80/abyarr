@@ -7,7 +7,10 @@ declare global {
   }
 }
 
-const MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID as string | undefined;
+const MEASUREMENT_ID = (
+  import.meta.env?.VITE_GA_MEASUREMENT_ID ||
+  (typeof process !== 'undefined' && (process.env?.VITE_GA_MEASUREMENT_ID || process.env?.EXPO_PUBLIC_GA_MEASUREMENT_ID))
+) as string | undefined;
 
 let initialized = false;
 let initPromise: Promise<void> | null = null;
