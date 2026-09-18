@@ -19,21 +19,26 @@ import {
   CheckCircle2,
 } from 'lucide-react-native';
 
-export function ThirdPartyScreen({ onBack }) {
-  const [integrations, setIntegrations] = useState({
-    googleFit: true,
+export function ThirdPartyScreen({ onBack, integrations: propIntegrations, onUpdateIntegrations }) {
+  const [integrations, setIntegrations] = useState(() => ({
+    googleFit: false,
     appleHealth: false,
-    strava: true,
-    telegramBot: true,
+    strava: false,
+    telegramBot: false,
     calendar: false,
-  });
+    ...(propIntegrations || {}),
+  }));
 
   const toggle = (key, name) => {
     const next = !integrations[key];
-    setIntegrations((prev) => ({ ...prev, [key]: next }));
+    const updated = { ...integrations, [key]: next };
+    setIntegrations(updated);
+    if (onUpdateIntegrations) {
+      onUpdateIntegrations(updated);
+    }
     Alert.alert(
-      next ? 'فعال شد' : 'غیرفعال شد',
-      next ? `اتصال ${name} با موفقیت روشن شد.` : `اتصال ${name} خاموش شد.`
+      next ? 'فعال‌سازی سرویس' : 'غیرفعال‌سازی سرویس',
+      next ? `سرویس ${name} برای همگام‌سازی انتخاب شد.` : `سرویس ${name} غیرفعال شد.`
     );
   };
 

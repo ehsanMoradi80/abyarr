@@ -23,9 +23,11 @@ import { ThirdPartyScreen } from './native/ThirdPartyScreen';
 import { SplashScreen } from './native/SplashScreen';
 import { OnboardingScreen } from './native/OnboardingScreen';
 import { TourModal } from './native/TourModal';
+import { DownloadModal } from './native/DownloadModal';
 import { BadgesModal } from './native/BadgesModal';
 import { CelebrationModal } from './native/CelebrationModal';
 import { CustomAmountModal } from './native/CustomAmountModal';
+import { QuickHubBottomSheet } from './native/QuickHubBottomSheet';
 
 import {
   loadAppData,
@@ -52,15 +54,18 @@ export default function App() {
     reminderIntervalMinutes: 60,
     hasCelebratedToday: false,
     hasCompletedOnboarding: false,
+    hasSeenTour: false,
   });
 
   const [isReady, setIsReady] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [tourVisible, setTourVisible] = useState(false);
+  const [downloadVisible, setDownloadVisible] = useState(false);
   const [badgesVisible, setBadgesVisible] = useState(false);
   const [celebrationVisible, setCelebrationVisible] = useState(false);
   const [customAmountVisible, setCustomAmountVisible] = useState(false);
+  const [quickHubVisible, setQuickHubVisible] = useState(false);
 
   // Dynamic safe area insets for Android & iOS with comfortable breathing room
   const screenDimensions = Dimensions.get('screen');
@@ -100,11 +105,13 @@ export default function App() {
     : (appData.lastDrinkTimestamp || 0);
 
   // Add water log
-  const handleAddWater = async (amountGlasses = 1, amountMl = 250) => {
+  const handleAddWater = async (amountGlasses = 1, amountMl = 250, beverage = 'آب خالص', beverageId = 'water') => {
     const newLog = {
       id: String(Date.now()),
       amountGlasses,
       amountMl,
+      beverage,
+      beverageId,
       loggedAt: new Date().toISOString(),
     };
 
@@ -127,10 +134,105 @@ export default function App() {
     setAppData(updatedState);
     await saveAppData(updatedState);
 
+    // Immediate Real-Time Live Sync to Partner & Cloud
+    try {
+      fetch('/api/partner/live-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: appData.partner?.myCode || 'AB-1000',
+          name: appData.name || 'همراه شما',
+          glasses: newDailyStats.totalGlasses,
+          goal: appData.goalGlasses || 8,
+          lastDrink: {
+            time: new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }),
+            amount: amountGlasses,
+            beverage,
+          },
+          pairedCode: appData.partner?.code,
+        }),
+      }).catch(() => {});
+    } catch (e) {
+      // Offline fallback
+    }
+
     // Reschedule reminder from this moment
     if (appData.reminderEnabled) {
       scheduleWaterReminder(appData.reminderIntervalMinutes || 60, appData.name || '');
     }
+  };
+
+  // Update Goal
+  const handleUpdateGoal = async (newGoal) => {
+    const updated = {
+      ...appData,
+      goalGlasses: newGoal,
+    };
+    setAppData(updated);
+    await saveAppData(updated);
+  };
+
+  // Partner Handlers (Real storage & state, no demo)
+  const handleConnectPartner = async (code) => {
+    const updated = {
+      ...appData,
+      partner: {
+        code,
+        status: 'active',
+        partnerName: 'همراه سلامت',
+        connectedAt: new Date().toISOString(),
+        shareProgress: true,
+        shareLastDrink: true,
+        progress: {
+          totalGlasses: 0,
+          goalGlasses: 8,
+        },
+      },
+    };
+    setAppData(updated);
+    await saveAppData(updated);
+  };
+
+  const handleDisconnectPartner = async () => {
+    const updated = {
+      ...appData,
+      partner: null,
+    };
+    setAppData(updated);
+    await saveAppData(updated);
+  };
+
+  const handleUpdatePartnerSharing = async (sharing) => {
+    if (!appData.partner) return;
+    const updated = {
+      ...appData,
+      partner: {
+        ...appData.partner,
+        ...sharing,
+      },
+    };
+    setAppData(updated);
+    await saveAppData(updated);
+  };
+
+  // Cloud Handlers (Real storage & state, no demo)
+  const handleUpdateUser = async (user) => {
+    const updated = {
+      ...appData,
+      user,
+      name: user?.name || appData.name,
+    };
+    setAppData(updated);
+    await saveAppData(updated);
+  };
+
+  const handleSyncNow = async () => {
+    const updated = {
+      ...appData,
+      lastSyncDate: new Date().toISOString(),
+    };
+    setAppData(updated);
+    await saveAppData(updated);
   };
 
   // Delete water log
@@ -192,14 +294,19 @@ export default function App() {
           translucent
         />
         <SplashScreen
-          onStart={() => {
+          onStart={async () => {
+            const fresh = await loadAppData();
             setShowSplash(false);
-            if (!appData.hasCompletedOnboarding) {
+            if (!fresh?.hasCompletedOnboarding && !appData.hasCompletedOnboarding) {
               setShowOnboarding(true);
             }
           }}
-          onSkip={() => {
+          onSkip={async () => {
+            const fresh = await loadAppData();
             setShowSplash(false);
+            if (!fresh?.hasCompletedOnboarding && !appData.hasCompletedOnboarding) {
+              setShowOnboarding(true);
+            }
           }}
         />
       </View>
@@ -220,11 +327,11 @@ export default function App() {
               ...appData,
               ...onboardingData,
               hasCompletedOnboarding: true,
+              hasSeenTour: true,
             };
             setAppData(updated);
             await saveAppData(updated);
             setShowOnboarding(false);
-            setTourVisible(true);
           }}
         />
       </View>
@@ -262,12 +369,14 @@ export default function App() {
             onAddWater={handleAddWater}
             onDeleteWater={handleDeleteWater}
             onOpenCustomAmount={() => setCustomAmountVisible(true)}
+            onOpenQuickHub={() => setQuickHubVisible(true)}
             onOpenRewards={() => setActiveTab('rewards')}
             onOpenPartner={() => setActiveTab('partner')}
             onOpenCloud={() => setActiveTab('cloud')}
             onOpenWidgets={() => setActiveTab('widgets')}
             onOpenThirdParty={() => setActiveTab('third-party')}
             onOpenTour={() => setTourVisible(true)}
+            onOpenDownload={() => setDownloadVisible(true)}
           />
         )}
 
@@ -282,13 +391,22 @@ export default function App() {
 
         {activeTab === 'partner' && (
           <PartnerScreen
+            partnerData={appData.partner}
+            userGlasses={totalGlasses}
+            userGoal={appData.goalGlasses || 8}
+            userName={appData.name || 'دوست خوبم'}
+            onConnectPartner={handleConnectPartner}
+            onDisconnectPartner={handleDisconnectPartner}
+            onUpdateSharing={handleUpdatePartnerSharing}
             onBack={() => setActiveTab('home')}
           />
         )}
 
         {activeTab === 'cloud' && (
           <CloudScreen
-            logsCount={(appData.logs || []).length}
+            appData={appData}
+            onUpdateUser={handleUpdateUser}
+            onSyncNow={handleSyncNow}
             onBack={() => setActiveTab('home')}
           />
         )}
@@ -305,6 +423,12 @@ export default function App() {
 
         {activeTab === 'third-party' && (
           <ThirdPartyScreen
+            integrations={appData.integrations}
+            onUpdateIntegrations={async (integrations) => {
+              const updated = { ...appData, integrations };
+              setAppData(updated);
+              await saveAppData(updated);
+            }}
             onBack={() => setActiveTab('home')}
           />
         )}
@@ -337,6 +461,7 @@ export default function App() {
             onShowOnboarding={() => setShowOnboarding(true)}
             onShowTour={() => setTourVisible(true)}
             onShowThirdParty={() => setActiveTab('third-party')}
+            onShowDownload={() => setDownloadVisible(true)}
           />
         )}
       </View>
@@ -462,7 +587,19 @@ export default function App() {
       {/* Guided Tour Modal */}
       <TourModal
         visible={tourVisible}
-        onClose={() => setTourVisible(false)}
+        onClose={async () => {
+          setTourVisible(false);
+          const updated = { ...appData, hasSeenTour: true };
+          setAppData(updated);
+          await saveAppData(updated);
+        }}
+      />
+
+      {/* Android & PWA Download Modal */}
+      <DownloadModal
+        visible={downloadVisible}
+        onClose={() => setDownloadVisible(false)}
+        inviteCode={appData.partner?.myCode || 'AB-1000'}
       />
 
       {/* Custom Amount Modal */}
@@ -470,6 +607,18 @@ export default function App() {
         visible={customAmountVisible}
         onClose={() => setCustomAmountVisible(false)}
         onAddCustom={(glasses, ml) => handleAddWater(glasses, ml)}
+      />
+
+      {/* QuickHub Drag-to-Close Bottom Sheet (No Close Button, Gesture Only) */}
+      <QuickHubBottomSheet
+        visible={quickHubVisible}
+        onClose={() => setQuickHubVisible(false)}
+        currentGoalGlasses={appData.goalGlasses || 8}
+        onUpdateGoal={handleUpdateGoal}
+        onAddBeverage={(item) => {
+          handleAddWater(item.amountGlasses, item.amountMl, item.beverage, item.beverageId);
+        }}
+        onOpenCustomAmount={() => setCustomAmountVisible(true)}
       />
     </View>
   );

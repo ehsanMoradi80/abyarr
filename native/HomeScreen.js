@@ -19,6 +19,9 @@ import {
   ChevronLeft,
   Zap,
   Compass,
+  Sliders,
+  Coffee,
+  Download,
 } from 'lucide-react-native';
 import { CompactStreakBar } from './CompactStreakBar';
 import { NooshMascotCard } from './NooshMascotCard';
@@ -36,12 +39,14 @@ export function HomeScreen({
   onAddWater,
   onDeleteWater,
   onOpenCustomAmount,
+  onOpenQuickHub,
   onOpenRewards,
   onOpenPartner,
   onOpenCloud,
   onOpenWidgets,
   onOpenThirdParty,
   onOpenTour,
+  onOpenDownload,
 }) {
   const percentage = goalGlasses > 0 ? Math.min(Math.round((todayGlasses / goalGlasses) * 100), 100) : 0;
   const isGoalReached = todayGlasses >= goalGlasses && goalGlasses > 0;
@@ -153,7 +158,21 @@ export function HomeScreen({
           </View>
           <View style={styles.hubTextCol}>
             <Text style={styles.hubTitle}>تور راهنما</Text>
-            <Text style={styles.hubSubtitle}>آشنایی با بخش‌ها</Text>
+            <Text style={styles.hubSubtitle}>تعاملی و زنده</Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.hubCard, { borderColor: '#BAE6FD', backgroundColor: '#F0F9FF' }]}
+          onPress={onOpenDownload}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.hubIconCircle, { backgroundColor: '#E0F2FE' }]}>
+            <Download size={18} color="#0284C7" />
+          </View>
+          <View style={styles.hubTextCol}>
+            <Text style={[styles.hubTitle, { color: '#0284C7' }]}>دانلود اپلیکیشن</Text>
+            <Text style={styles.hubSubtitle}>APK و PWA</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -206,6 +225,33 @@ export function HomeScreen({
         </View>
       </View>
 
+      {/* QuickHub Bottom Sheet Launcher */}
+      {onOpenQuickHub && (
+        <TouchableOpacity
+          style={styles.quickHubBanner}
+          onPress={onOpenQuickHub}
+          activeOpacity={0.8}
+        >
+          <View style={styles.quickHubBannerContent}>
+            <View style={styles.quickHubIconBox}>
+              <Sliders size={20} color="#FFFFFF" strokeWidth={2.4} />
+            </View>
+            <View style={styles.quickHubTextBox}>
+              <View style={styles.quickHubTitleRow}>
+                <Text style={styles.quickHubTitle}>هاب سریع نوشیدنی‌ها (QuickHub)</Text>
+                <View style={styles.quickHubBadge}>
+                  <Text style={styles.quickHubBadgeText}>جدید</Text>
+                </View>
+              </View>
+              <Text style={styles.quickHubSubtitle}>
+                چای، قهوه، دمنوش، آبمیوه + محاسبه‌گر هوشمند نیاز بدن
+              </Text>
+            </View>
+          </View>
+          <ChevronLeft size={20} color="#0284C7" strokeWidth={2.4} />
+        </TouchableOpacity>
+      )}
+
       {/* 3. Cup Selector with Quick Log & Multiplier */}
       <CupSelector
         onAddWater={onAddWater}
@@ -251,16 +297,20 @@ export function HomeScreen({
                 {/* Amount and Time */}
                 <View style={styles.logDetails}>
                   <Text style={styles.logAmount}>
-                    {formatGlasses(log.amountGlasses || 1)} ({formatNumber(log.amountMl || 250)} میلی‌لیتر)
+                    {log.beverage ? `${log.beverage} • ` : ''}{formatGlasses(log.amountGlasses || 1)} ({formatNumber(log.amountMl || 250)} میلی‌لیتر)
                   </Text>
                   <Text style={styles.logTime}>
                     {formatTime(log.loggedAt)} ({relativeTimeFromNow(log.loggedAt)})
                   </Text>
                 </View>
 
-                {/* Droplet icon container */}
+                {/* Beverage or Droplet icon container */}
                 <View style={styles.logIconBox}>
-                  <Droplet size={15} color="#2D9CFF" fill="#2D9CFF" />
+                  {log.beverage && log.beverage.includes('قهوه') ? (
+                    <Coffee size={15} color="#854D0E" />
+                  ) : (
+                    <Droplet size={15} color="#2D9CFF" fill="#2D9CFF" />
+                  )}
                 </View>
               </View>
             ))}
@@ -535,5 +585,67 @@ const styles = StyleSheet.create({
     backgroundColor: '#E6F4FF',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  quickHubBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: '#BAE6FD',
+    shadowColor: '#0284C7',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  quickHubBannerContent: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  quickHubIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#0284C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickHubTextBox: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  quickHubTitleRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+  },
+  quickHubTitle: {
+    fontSize: 13.5,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  quickHubBadge: {
+    backgroundColor: '#E0F2FE',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  quickHubBadgeText: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    color: '#0284C7',
+  },
+  quickHubSubtitle: {
+    fontSize: 10.5,
+    fontWeight: '500',
+    color: '#64748B',
+    marginTop: 2,
+    textAlign: 'right',
   },
 });

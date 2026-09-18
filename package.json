@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.61.3",
+    "@react-native-async-storage/async-storage": "^3.1.1",
     "@supabase/supabase-js": "^2.112.4",
     "canvas-confetti": "^1.9.4",
     "cookie-parser": "^1.4.7",

@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  Share,
+  Switch,
 } from 'react-native';
 import {
   Users,
@@ -21,43 +23,151 @@ import {
   Sparkles,
   Link,
   Unlink,
+  UserPlus,
 } from 'lucide-react-native';
+import { formatNumber } from './strings';
 
-export function PartnerScreen({ onBack }) {
-  const [partnerConnected, setPartnerConnected] = useState(true);
-  const [partnerName, setPartnerName] = useState('همراه مهربانم');
-  const [partnerGlasses, setPartnerGlasses] = useState(6);
-  const [partnerGoal, setPartnerGoal] = useState(8);
-  const [partnerLastDrink, setPartnerLastDrink] = useState('۲۵ دقیقه پیش');
-  const [myInviteCode, setMyInviteCode] = useState('NOOSH-8421');
+export function PartnerScreen({
+  onBack,
+  partnerData = null,
+  onConnectPartner,
+  onDisconnectPartner,
+  onUpdateSharing,
+  userGlasses = 0,
+  userGoal = 8,
+  userName = 'من',
+}) {
   const [inputCode, setInputCode] = useState('');
   const [copied, setCopied] = useState(false);
   const [nudged, setNudged] = useState(false);
-  const [shareProgress, setShareProgress] = useState(true);
-  const [shareTime, setShareTime] = useState(true);
+  const [liveData, setLiveData] = useState(null);
+  const [incomingNudge, setIncomingNudge] = useState(null);
+  const lastNudgeTimeRef = React.useRef('');
 
-  const handleCopyCode = () => {
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    Alert.alert('کپی شد', 'کد دعوت اختصاصی شما در کلیپ‌بورد کپی شد.');
+  // Derive unique local invite code if not provided
+  const [myCode] = useState(() => {
+    return partnerData?.myCode || 'AB-' + Math.floor(1000 + Math.random() * 9000);
+  });
+
+  const isConnected = !!(partnerData && partnerData.status === 'active');
+  const partnerCode = partnerData?.code;
+
+  // Real-time live synchronization loop
+  React.useEffect(() => {
+    let isMounted = true;
+
+    const syncAndPoll = async () => {
+      try {
+        // 1. Send my live state to backend
+        await fetch('/api/partner/live-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            code: myCode,
+            name: userName || 'همراه شما',
+            glasses: userGlasses,
+            goal: userGoal,
+            pairedCode: partnerCode,
+          }),
+        });
+
+        // 2. If connected, poll partner's state
+        if (isConnected && partnerCode) {
+          const res = await fetch(`/api/partner/live-poll?code=${partnerCode}&myCode=${myCode}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (isMounted && data.connected) {
+              setLiveData(data);
+              if (data.nudge && data.nudge.timestamp !== lastNudgeTimeRef.current) {
+                lastNudgeTimeRef.current = data.nudge.timestamp;
+                setIncomingNudge(data.nudge);
+                setTimeout(() => {
+                  if (isMounted) setIncomingNudge(null);
+                }, 6000);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        // Silent catch for offline
+      }
+    };
+
+    // Initial run
+    syncAndPoll();
+
+    // 3-second live poll for real-time hydration awareness
+    const interval = setInterval(syncAndPoll, 3000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [myCode, partnerCode, isConnected, userGlasses, userGoal, userName]);
+
+  const partnerName = liveData?.partnerName || partnerData?.partnerName || 'همراه سلامت';
+  const partnerGlasses = liveData?.partnerGlasses ?? partnerData?.progress?.totalGlasses ?? 0;
+  const partnerGoal = liveData?.partnerGoal ?? partnerData?.progress?.goalGlasses ?? 8;
+  const partnerPercent = partnerGoal > 0 ? Math.min(Math.round((partnerGlasses / partnerGoal) * 100), 100) : 0;
+  const lastDrink = liveData?.lastDrink;
+
+  const [shareProgress, setShareProgress] = useState(partnerData?.shareProgress ?? true);
+  const [shareLastDrink, setShareLastDrink] = useState(partnerData?.shareLastDrink ?? true);
+
+  const handleCopyCode = async () => {
+    try {
+      const appUrl = typeof window !== 'undefined' ? window.location.origin : 'https://abyar.app';
+      await Share.share({
+        message: `سلام! در برنامه آب‌یار منتظرتم. لینک دانلود و نصب برنامه:\n${appUrl}\nبا وارد کردن کد دعوت من (${myCode}) همراهم شو تا به صورت زنده حواسمون به آب خوردن هم باشه!`,
+        title: 'کد دعوت همراه آب‌یار',
+      });
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch (err) {
+      Alert.alert('کد دعوت', `کد دعوت شما: ${myCode}`);
+    }
   };
 
   const handleConnect = () => {
-    if (!inputCode || inputCode.trim().length < 4) {
-      Alert.alert('خطا', 'لطفاً کد معتبر همراه را وارد کنید.');
+    const clean = inputCode.trim().toUpperCase();
+    if (!clean || clean.length < 4) {
+      Alert.alert('کد نامعتبر', 'لطفاً کد دعوت معتبر همراه خود را وارد کنید (مثال: AB-1234)');
       return;
     }
-    setPartnerConnected(true);
+    if (clean === myCode) {
+      Alert.alert('خطا', 'نمی‌توانید کد دعوت خودتان را وارد کنید!');
+      return;
+    }
+
+    if (onConnectPartner) {
+      onConnectPartner(clean);
+    }
     setInputCode('');
-    Alert.alert('موفق', 'اتصال به همراه سلامت با موفقیت برقرار شد!');
+    Alert.alert('تبریک!', `شما با موفقیت به همراه سلامت متصل شدید و داده‌ها به صورت ریل‌تایم همگام شدند.`);
   };
 
-  const handleNudge = () => {
+  const handleNudge = async () => {
     setNudged(true);
-    setTimeout(() => setNudged(false), 2500);
+    setTimeout(() => setNudged(false), 3000);
+
+    if (partnerCode) {
+      try {
+        await fetch('/api/partner/send-nudge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            targetCode: partnerCode,
+            fromName: userName || 'همراه شما',
+            message: 'یک لیوان آب خنک بنوش و سالم بمون! 💧',
+          }),
+        });
+      } catch (e) {
+        // Silent
+      }
+    }
+
     Alert.alert(
-      'یادآوری ارسال شد! ',
-      `پیام انرژی‌بخش نوشیدن آب برای ${partnerName} ارسال شد.`
+      'یادآوری ارسال شد',
+      `پیام محبت‌آمیز یادآوری نوشیدن آب برای ${partnerName} به صورت زنده ارسال شد.`
     );
   };
 
@@ -70,182 +180,185 @@ export function PartnerScreen({ onBack }) {
         {
           text: 'قطع ارتباط',
           style: 'destructive',
-          onPress: () => setPartnerConnected(false),
+          onPress: () => {
+            if (onDisconnectPartner) {
+              onDisconnectPartner();
+            }
+          },
         },
       ]
     );
   };
 
+  const handleToggleProgress = (val) => {
+    setShareProgress(val);
+    if (onUpdateSharing) onUpdateSharing({ shareProgress: val, shareLastDrink });
+  };
+
+  const handleToggleLastDrink = (val) => {
+    setShareLastDrink(val);
+    if (onUpdateSharing) onUpdateSharing({ shareProgress, shareLastDrink: val });
+  };
+
   return (
     <View style={styles.container}>
-      {/* Top Header */}
-      <View style={styles.topHeader}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={onBack}
-          activeOpacity={0.7}
-        >
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
           <ChevronRight size={22} color="#1E293B" />
         </TouchableOpacity>
-        <View style={styles.headerTitleWrap}>
-          <Text style={styles.headerTitle}>همراه سلامت</Text>
-          <Text style={styles.headerSubtitle}>نوشیدن آب دو نفره و انگیزه روزانه</Text>
+        <View style={styles.headerTextCol}>
+          <Text style={styles.headerTitle}>همراه سلامت (دو نفره)</Text>
+          <Text style={styles.headerSubtitle}>انگیزه و همدلی در نوشیدن آب</Text>
         </View>
-        <View style={styles.headerIconWrap}>
-          <Users size={18} color="#10B981" />
+        <View style={styles.headerIconWrapper}>
+          <Users size={20} color="#059669" />
         </View>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {partnerConnected ? (
-          /* Active Partner Card */
-          <View style={styles.partnerCard}>
-            <View style={styles.partnerCardHeader}>
-              <View style={styles.partnerAvatarWrap}>
-                <Users size={24} color="#10B981" />
-              </View>
-              <View style={styles.partnerInfoWrap}>
-                <View style={styles.partnerNameRow}>
-                  <Text style={styles.partnerName}>{partnerName}</Text>
-                  <View style={styles.onlineBadge}>
-                    <View style={styles.onlineDot} />
-                    <Text style={styles.onlineText}>آنلاین</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {isConnected ? (
+          /* Active Partner View */
+          <View style={styles.activeContainer}>
+            <View style={styles.partnerHeroCard}>
+              <View style={styles.partnerAvatarRow}>
+                <View style={styles.partnerAvatar}>
+                  <Heart size={28} color="#EF4444" fill="#EF4444" />
+                </View>
+                <View style={styles.partnerInfoCol}>
+                  <Text style={styles.partnerNameText}>{partnerName}</Text>
+                  <View style={styles.liveStatusRow}>
+                    <View style={styles.livePulseDot} />
+                    <Text style={styles.partnerConnectedStatus}>اتصال زنده و ریل‌تایم</Text>
                   </View>
                 </View>
-                <Text style={styles.partnerStatusSub}>همگام با حساب شما</Text>
               </View>
+
+              {/* Incoming Nudge Alert Banner */}
+              {incomingNudge && (
+                <View style={styles.nudgeAlertBanner}>
+                  <Sparkles size={16} color="#0284C7" />
+                  <Text style={styles.nudgeAlertText}>
+                    💌 {incomingNudge.from}: «{incomingNudge.message}»
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.partnerProgressBox}>
+                <View style={styles.progressRowHeader}>
+                  <Text style={styles.progressLabel}>مصرف امروز همراه:</Text>
+                  <Text style={styles.progressValue}>
+                    {formatNumber(partnerGlasses)} از {formatNumber(partnerGoal)} لیوان ({formatNumber(partnerPercent)}٪)
+                  </Text>
+                </View>
+                <View style={styles.progressBarTrack}>
+                  <View style={[styles.progressBarFill, { width: `${partnerPercent}%` }]} />
+                </View>
+                {lastDrink && (
+                  <View style={styles.lastDrinkRow}>
+                    <Clock size={12} color="#64748B" />
+                    <Text style={styles.lastDrinkText}>
+                      آخرین نوشیدنی: {lastDrink.beverage || 'آب خالص'} ({formatNumber(lastDrink.amount || 1)} لیوان)
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              <TouchableOpacity style={styles.nudgeBtn} onPress={handleNudge} activeOpacity={0.85}>
+                <Send size={18} color="#FFFFFF" />
+                <Text style={styles.nudgeBtnText}>
+                  {nudged ? 'یادآوری ارسال شد!' : 'ارسال انگیزه و یادآوری ریل‌تایم'}
+                </Text>
+              </TouchableOpacity>
             </View>
 
-            {/* Partner Hydration Progress */}
-            <View style={styles.progressBox}>
-              <View style={styles.progressHeaderRow}>
-                <Text style={styles.progressTitle}>مصرف آب امروز همراه</Text>
-                <Text style={styles.progressValue}>
-                  {partnerGlasses} از {partnerGoal} لیوان
-                </Text>
-              </View>
+            {/* Privacy & Sharing Settings */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>تنظیمات حریم خصوصی و اشتراک‌گذاری</Text>
 
-              <View style={styles.track}>
-                <View
-                  style={[
-                    styles.trackFill,
-                    { width: `${(partnerGlasses / partnerGoal) * 100}%` },
-                  ]}
+              <View style={styles.switchRow}>
+                <Switch
+                  value={shareProgress}
+                  onValueChange={handleToggleProgress}
+                  trackColor={{ false: '#CBD5E1', true: '#6EE7B7' }}
+                  thumbColor={shareProgress ? '#059669' : '#F1F5F9'}
                 />
+                <View style={styles.switchLabelCol}>
+                  <Text style={styles.switchTitle}>اشتراک‌گذاری درصد پیشرفت</Text>
+                  <Text style={styles.switchSub}>همراه شما بتواند تعداد لیوان‌های نوشیده‌شده شما را ببیند</Text>
+                </View>
               </View>
 
-              <View style={styles.lastDrinkRow}>
-                <Clock size={13} color="#64748B" />
-                <Text style={styles.lastDrinkText}>
-                  آخرین لیوان: {partnerLastDrink}
-                </Text>
+              <View style={[styles.switchRow, { marginTop: 12 }]}>
+                <Switch
+                  value={shareLastDrink}
+                  onValueChange={handleToggleLastDrink}
+                  trackColor={{ false: '#CBD5E1', true: '#6EE7B7' }}
+                  thumbColor={shareLastDrink ? '#059669' : '#F1F5F9'}
+                />
+                <View style={styles.switchLabelCol}>
+                  <Text style={styles.switchTitle}>اشتراک‌گذاری زمان آخرین نوشیدنی</Text>
+                  <Text style={styles.switchSub}>نمایش زمان آخرین باری که آب ثبت کردید</Text>
+                </View>
               </View>
+
+              <TouchableOpacity style={styles.disconnectBtn} onPress={handleDisconnect} activeOpacity={0.7}>
+                <Unlink size={16} color="#DC2626" />
+                <Text style={styles.disconnectBtnText}>قطع ارتباط با این همراه</Text>
+              </TouchableOpacity>
             </View>
-
-            {/* Cheer & Nudge Button */}
-            <TouchableOpacity
-              style={[styles.nudgeBtn, nudged && styles.nudgeBtnSent]}
-              onPress={handleNudge}
-              activeOpacity={0.8}
-            >
-              <Heart size={16} color={nudged ? '#10B981' : '#FFFFFF'} />
-              <Text style={[styles.nudgeBtnText, nudged && styles.nudgeBtnTextSent]}>
-                {nudged ? 'یادآوری ارسال شد!' : 'ارسال انگیزه و یادآوری آب'}
-              </Text>
-            </TouchableOpacity>
-
-            {/* Disconnect Link */}
-            <TouchableOpacity
-              style={styles.disconnectBtn}
-              onPress={handleDisconnect}
-              activeOpacity={0.7}
-            >
-              <Unlink size={14} color="#EF4444" />
-              <Text style={styles.disconnectText}>قطع ارتباط با همراه</Text>
-            </TouchableOpacity>
           </View>
         ) : (
-          /* Connect Partner Flow */
-          <View style={styles.connectCard}>
-            <View style={styles.connectIconWrap}>
-              <Users size={32} color="#2D9CFF" />
-            </View>
-            <Text style={styles.connectTitle}>اتصال به همراه سلامت</Text>
-            <Text style={styles.connectDesc}>
-              با داشتن یک همراه، هر دو نفر پیشرفت همدیگر را می‌بینید و به نوشیدن
-              منظم آب تشویق می‌شوید.
-            </Text>
-
-            {/* My Invite Code */}
-            <View style={styles.myCodeBox}>
-              <Text style={styles.myCodeLabel}>کد اختصاصی دعوت شما:</Text>
-              <View style={styles.codeRow}>
-                <TouchableOpacity
-                  style={styles.copyBtn}
-                  onPress={handleCopyCode}
-                  activeOpacity={0.7}
-                >
-                  {copied ? (
-                    <Check size={16} color="#10B981" />
-                  ) : (
-                    <Copy size={16} color="#2D9CFF" />
-                  )}
-                  <Text style={styles.copyBtnText}>{copied ? 'کپی شد' : 'کپی'}</Text>
-                </TouchableOpacity>
-                <Text style={styles.codeText}>{myInviteCode}</Text>
+          /* Empty / Not Connected View */
+          <View style={styles.connectContainer}>
+            {/* Invite Code Box */}
+            <View style={styles.card}>
+              <View style={styles.cardHeaderRow}>
+                <Sparkles size={18} color="#059669" />
+                <Text style={styles.cardTitle}>کد دعوت اختصاصی شما</Text>
               </View>
+              <Text style={styles.cardSubtitle}>
+                این کد را برای دوست، همسر یا همکارتان بفرستید تا در آب‌یار همراه یکدیگر شوید:
+              </Text>
+
+              <View style={styles.codeDisplayBox}>
+                <Text style={styles.codeText}>{myCode}</Text>
+              </View>
+
+              <TouchableOpacity style={styles.shareCodeBtn} onPress={handleCopyCode} activeOpacity={0.85}>
+                <Copy size={18} color="#FFFFFF" />
+                <Text style={styles.shareCodeBtnText}>
+                  {copied ? 'ارسال شد!' : 'اشتراک‌گذاری کد با همراه'}
+                </Text>
+              </TouchableOpacity>
             </View>
 
-            {/* Input Partner Code */}
-            <View style={styles.inputWrap}>
-              <Text style={styles.inputLabel}>کد دعوت همراه خود را وارد کنید:</Text>
+            {/* Enter Partner's Code */}
+            <View style={styles.card}>
+              <View style={styles.cardHeaderRow}>
+                <UserPlus size={18} color="#2D9CFF" />
+                <Text style={styles.cardTitle}>کد همراه خود را وارد کنید</Text>
+              </View>
+              <Text style={styles.cardSubtitle}>
+                اگر دوستتان برای شما کد فرستاده، آن را در کادر زیر وارد کنید:
+              </Text>
+
               <TextInput
-                style={styles.textInput}
-                placeholder="مثال: NOOSH-1234"
-                placeholderTextColor="#94A3B8"
+                style={styles.codeInput}
                 value={inputCode}
                 onChangeText={setInputCode}
+                placeholder="مثلاً AB-4589"
+                placeholderTextColor="#94A3B8"
                 autoCapitalize="characters"
               />
-              <TouchableOpacity
-                style={styles.connectSubmitBtn}
-                onPress={handleConnect}
-                activeOpacity={0.8}
-              >
-                <Link size={16} color="#FFFFFF" />
-                <Text style={styles.connectSubmitBtnText}>برقراری اتصال</Text>
+
+              <TouchableOpacity style={styles.connectBtn} onPress={handleConnect} activeOpacity={0.85}>
+                <Link size={18} color="#FFFFFF" />
+                <Text style={styles.connectBtnText}>اتصال به همراه سلامت</Text>
               </TouchableOpacity>
             </View>
           </View>
         )}
-
-        {/* Benefits Card */}
-        <View style={styles.infoCard}>
-          <View style={styles.infoHeaderRow}>
-            <Sparkles size={16} color="#F59E0B" />
-            <Text style={styles.infoTitle}>چرا آب‌یار دو نفره؟</Text>
-          </View>
-          <Text style={styles.infoBody}>
-            تحقیقات عادات رفتاری نشان داده افرادی که اهداف تندرستی خود را با یک
-            همراه به اشتراک می‌گذارند، تا ۶۵٪ ثبات بیشتری در دستیابی به هدف خود
-            دارند.
-          </Text>
-        </View>
-
-        {/* Privacy Card */}
-        <View style={styles.privacyCard}>
-          <View style={styles.infoHeaderRow}>
-            <ShieldCheck size={16} color="#10B981" />
-            <Text style={styles.infoTitle}>حفظ حریم خصوصی</Text>
-          </View>
-          <Text style={styles.privacyDesc}>
-            فقط میزان لیوان‌های امروز و زمان آخرین نوشیدن به همراه نشان داده
-            می‌شود و اطلاعات شخصی شما کاملاً محرمانه است.
-          </Text>
-        </View>
       </ScrollView>
     </View>
   );
@@ -254,337 +367,305 @@ export function PartnerScreen({ onBack }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F6FA',
+    backgroundColor: '#F8FAFC',
   },
-  topHeader: {
+  header: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderColor: '#E2E8F0',
+    borderBottomColor: '#F1F5F9',
   },
   backBtn: {
-    width: 38,
-    height: 38,
+    padding: 8,
     borderRadius: 12,
     backgroundColor: '#F1F5F9',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  headerTitleWrap: {
-    alignItems: 'flex-end',
+  headerTextCol: {
     flex: 1,
-    marginRight: 10,
+    alignItems: 'flex-end',
+    marginRight: 12,
   },
   headerTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#0F172A',
   },
   headerSubtitle: {
     fontSize: 11,
+    fontWeight: '600',
     color: '#64748B',
-    marginTop: 1,
+    marginTop: 2,
   },
-  headerIconWrap: {
-    width: 36,
-    height: 36,
+  headerIconWrapper: {
+    width: 38,
+    height: 38,
     borderRadius: 12,
     backgroundColor: '#D1FAE5',
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 30,
+    padding: 20,
+    gap: 16,
+    paddingBottom: 40,
+  },
+  activeContainer: {
     gap: 16,
   },
-  partnerCard: {
+  partnerHeroCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  partnerAvatarRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 14,
+  },
+  partnerAvatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#FEE2E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  partnerInfoCol: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  partnerNameText: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  liveStatusRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 2,
+  },
+  livePulseDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#10B981',
+  },
+  partnerConnectedStatus: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#059669',
+  },
+  nudgeAlertBanner: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#E0F2FE',
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+    borderRadius: 12,
+    padding: 10,
+    marginTop: 12,
+  },
+  nudgeAlertText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0369A1',
+    flex: 1,
+    textAlign: 'right',
+  },
+  lastDrinkRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#D1FAE5',
+  },
+  lastDrinkText: {
+    fontSize: 11,
+    color: '#065F46',
+    fontWeight: '600',
+  },
+  partnerProgressBox: {
+    marginTop: 18,
+    padding: 14,
+    backgroundColor: '#F0FDF4',
+    borderRadius: 16,
+  },
+  progressRowHeader: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  progressLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#065F46',
+  },
+  progressValue: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#059669',
+  },
+  progressBarTrack: {
+    height: 8,
+    backgroundColor: '#D1FAE5',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#10B981',
+    borderRadius: 4,
+  },
+  nudgeBtn: {
+    backgroundColor: '#059669',
+    borderRadius: 14,
+    height: 48,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 18,
+  },
+  nudgeBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  connectContainer: {
+    gap: 16,
+  },
+  card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 18,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    gap: 16,
   },
-  partnerCardHeader: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 12,
-  },
-  partnerAvatarWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#D1FAE5',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  partnerInfoWrap: {
-    alignItems: 'flex-end',
-    flex: 1,
-  },
-  partnerNameRow: {
+  cardHeaderRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 8,
+    marginBottom: 6,
   },
-  partnerName: {
-    fontSize: 16,
+  cardTitle: {
+    fontSize: 14,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#0F172A',
   },
-  onlineBadge: {
-    flexDirection: 'row-reverse',
+  cardSubtitle: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#64748B',
+    lineHeight: 18,
+    textAlign: 'right',
+    marginBottom: 14,
+  },
+  codeDisplayBox: {
+    backgroundColor: '#F0FDF4',
+    borderRadius: 16,
+    paddingVertical: 14,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: '#86EFAC',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#ECFDF5',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
+    marginBottom: 14,
   },
-  onlineDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#10B981',
-  },
-  onlineText: {
-    fontSize: 10,
-    fontWeight: '700',
+  codeText: {
+    fontSize: 24,
+    fontWeight: '900',
     color: '#059669',
+    letterSpacing: 3,
   },
-  partnerStatusSub: {
-    fontSize: 11,
-    color: '#64748B',
-    marginTop: 2,
-  },
-  progressBox: {
-    backgroundColor: '#F8FAFC',
+  shareCodeBtn: {
+    backgroundColor: '#059669',
     borderRadius: 14,
-    padding: 14,
-    gap: 8,
-  },
-  progressHeaderRow: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-  },
-  progressTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#334155',
-  },
-  progressValue: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#2D9CFF',
-  },
-  track: {
-    height: 8,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  trackFill: {
-    height: '100%',
-    backgroundColor: '#10B981',
-    borderRadius: 4,
-  },
-  lastDrinkRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 2,
-  },
-  lastDrinkText: {
-    fontSize: 11,
-    color: '#64748B',
-  },
-  nudgeBtn: {
-    backgroundColor: '#2D9CFF',
+    height: 46,
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 12,
-    borderRadius: 14,
   },
-  nudgeBtnSent: {
-    backgroundColor: '#ECFDF5',
-    borderWidth: 1,
-    borderColor: '#A7F3D0',
-  },
-  nudgeBtnText: {
+  shareCodeBtnText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#FFFFFF',
   },
-  nudgeBtnTextSent: {
-    color: '#059669',
+  codeInput: {
+    height: 48,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    paddingHorizontal: 16,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0F172A',
+    textAlign: 'center',
+    letterSpacing: 2,
+    marginBottom: 12,
+  },
+  connectBtn: {
+    backgroundColor: '#2D9CFF',
+    borderRadius: 14,
+    height: 46,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  connectBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  switchRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+  },
+  switchLabelCol: {
+    flex: 1,
+    alignItems: 'flex-end',
+    marginLeft: 12,
+  },
+  switchTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+  switchSub: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: '#64748B',
+    marginTop: 2,
+    textAlign: 'right',
   },
   disconnectBtn: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
-    paddingVertical: 6,
-  },
-  disconnectText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#EF4444',
-  },
-  connectCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    gap: 14,
-  },
-  connectIconWrap: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#E6F4FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  connectTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#1E293B',
-    textAlign: 'center',
-  },
-  connectDesc: {
-    fontSize: 12,
-    color: '#64748B',
-    textAlign: 'center',
-    lineHeight: 19,
-  },
-  myCodeBox: {
-    width: '100%',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 14,
-    padding: 12,
     gap: 6,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  myCodeLabel: {
-    fontSize: 11,
-    color: '#64748B',
-    textAlign: 'right',
-  },
-  codeRow: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  codeText: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#2D9CFF',
-    letterSpacing: 2,
-  },
-  copyBtn: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  copyBtnText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#2D9CFF',
-  },
-  inputWrap: {
-    width: '100%',
-    gap: 8,
-  },
-  inputLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#334155',
-    textAlign: 'right',
-  },
-  textInput: {
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 12,
-    paddingHorizontal: 14,
+    marginTop: 18,
     paddingVertical: 10,
-    fontSize: 13,
-    color: '#1E293B',
-    textAlign: 'center',
   },
-  connectSubmitBtn: {
-    backgroundColor: '#10B981',
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginTop: 4,
-  },
-  connectSubmitBtnText: {
-    fontSize: 13,
+  disconnectBtnText: {
+    fontSize: 12,
     fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  infoCard: {
-    backgroundColor: '#FFFBEB',
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#FDE68A',
-    gap: 6,
-  },
-  infoHeaderRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 6,
-  },
-  infoTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#92400E',
-  },
-  infoBody: {
-    fontSize: 11,
-    color: '#78350F',
-    lineHeight: 18,
-    textAlign: 'right',
-  },
-  privacyCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    gap: 6,
-  },
-  privacyDesc: {
-    fontSize: 11,
-    color: '#64748B',
-    lineHeight: 18,
-    textAlign: 'right',
+    color: '#DC2626',
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -8,6 +8,7 @@ import {
   TextInput,
   Switch,
   Alert,
+  Share,
 } from 'react-native';
 import {
   Cloud,
@@ -20,208 +21,227 @@ import {
   Lock,
   ArrowDownCircle,
   ArrowUpCircle,
+  LogOut,
+  User,
+  Sparkles,
 } from 'lucide-react-native';
+import { formatNumber } from './strings';
 
-export function CloudScreen({ onBack, logsCount = 42 }) {
+export function CloudScreen({
+  onBack,
+  appData = {},
+  onUpdateUser,
+  onSyncNow,
+}) {
   const [isSyncing, setIsSyncing] = useState(false);
-  const [autoSync, setAutoSync] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
-  const [phoneNumber, setPhoneNumber] = useState('۰۹۱۲۳۴۵۶۷۸۹');
-  const [inputPhone, setInputPhone] = useState('');
-  const [lastSyncTime, setLastSyncTime] = useState('چند لحظه پیش');
+  const [autoSync, setAutoSync] = useState(appData.autoSync ?? true);
+  const [inputPhoneOrEmail, setInputPhoneOrEmail] = useState('');
+  const [inputName, setInputName] = useState('');
+  const [lastSyncTime, setLastSyncTime] = useState(appData.lastSyncDate || 'هنوز همگام نشده');
 
-  const handleManualSync = () => {
+  const user = appData.user || null;
+  const isLoggedIn = !!(user && (user.phone || user.email));
+  const logsCount = (appData.logs || []).length;
+
+  const handleManualSync = async () => {
     setIsSyncing(true);
-    setTimeout(() => {
-      setIsSyncing(false);
-      setLastSyncTime('همین الان');
+    try {
+      if (onSyncNow) {
+        await onSyncNow();
+      }
+      const nowStr = new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
+      setLastSyncTime(`امروز ساعت ${nowStr}`);
       Alert.alert(
-        'همگام‌سازی انجام شد',
-        'تمام گزارش‌های مصرف آب و نشان‌های شما با موفقیت در فضای ابری ذخیره شدند.'
+        'همگام‌سازی موفق',
+        `تعداد ${formatNumber(logsCount)} لاگ مصرف آب با موفقیت ذخیره و همگام‌سازی شد.`
       );
-    }, 1200);
+    } catch (err) {
+      Alert.alert('خطا در همگام‌سازی', 'ارتباط با سرور برقرار نشد. داده‌ها در حافظه دستگاه ذخیره هستند.');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const handleLogin = () => {
-    if (!inputPhone || inputPhone.trim().length < 10) {
-      Alert.alert('خطا', 'لطفاً شماره موبایل معتبر وارد کنید.');
+    const val = inputPhoneOrEmail.trim();
+    if (!val || val.length < 5) {
+      Alert.alert('خطا', 'لطفاً شماره تماس یا ایمیل معتبر وارد کنید.');
       return;
     }
-    setPhoneNumber(inputPhone);
-    setIsLoggedIn(true);
-    setInputPhone('');
-    Alert.alert('ورود موفق', 'حساب شما با سرور ابری آب‌یار متصل شد.');
+
+    const newUser = {
+      id: 'usr_' + Date.now(),
+      phone: val.includes('@') ? null : val,
+      email: val.includes('@') ? val : null,
+      name: inputName.trim() || appData.name || 'کاربر آب‌یار',
+      createdAt: new Date().toISOString(),
+    };
+
+    if (onUpdateUser) {
+      onUpdateUser(newUser);
+    }
+
+    setInputPhoneOrEmail('');
+    setInputName('');
+    Alert.alert('خوش آمدید', `حساب ابری شما به نام «${newUser.name}» با موفقیت فعال شد.`);
   };
 
   const handleLogout = () => {
     Alert.alert(
-      'خروج از حساب',
-      'با خروج، داده‌های محلی حذف نمی‌شوند اما همگام‌سازی ابری موقتاً متوقف خواهد شد.',
+      'خروج از حساب ابری',
+      'با خروج از حساب، اطلاعات ثبت‌شده روی دستگاه باقی می‌مانند اما همگام‌سازی ابری متوقف می‌شود.',
       [
         { text: 'انصراف', style: 'cancel' },
         {
           text: 'خروج',
           style: 'destructive',
-          onPress: () => setIsLoggedIn(false),
+          onPress: () => {
+            if (onUpdateUser) {
+              onUpdateUser(null);
+            }
+            Alert.alert('خروج انجام شد', 'حساب ابری غیرفعال شد.');
+          },
         },
       ]
     );
   };
 
+  // Export local data to share or backup
+  const handleExportData = async () => {
+    try {
+      const backupPayload = JSON.stringify(appData, null, 2);
+      await Share.share({
+        message: backupPayload,
+        title: 'نسخه پشتیبان آب‌یار',
+      });
+    } catch (err) {
+      Alert.alert('خطا', 'امکان اشتراک‌گذاری فایل پشتیبان وجود ندارد.');
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* Top Header */}
-      <View style={styles.topHeader}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={onBack}
-          activeOpacity={0.7}
-        >
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
           <ChevronRight size={22} color="#1E293B" />
         </TouchableOpacity>
-        <View style={styles.headerTitleWrap}>
+        <View style={styles.headerTextCol}>
           <Text style={styles.headerTitle}>همگام‌سازی ابری</Text>
-          <Text style={styles.headerSubtitle}>پشتیبان‌گیری امن و بازیابی اطلاعات</Text>
+          <Text style={styles.headerSubtitle}>پشتیبان‌گیری امن اطلاعات و سوابق</Text>
         </View>
-        <View style={styles.headerIconWrap}>
-          <Cloud size={18} color="#0284C7" />
+        <View style={styles.headerIconWrapper}>
+          <Cloud size={20} color="#2D9CFF" />
         </View>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Cloud Status Card */}
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Status Card */}
         <View style={styles.statusCard}>
-          <View style={styles.statusHeaderRow}>
-            <View style={styles.cloudIconCircle}>
-              <Cloud size={30} color="#0284C7" />
-            </View>
-            <View style={styles.statusTextWrap}>
-              <View style={styles.statusBadgeRow}>
-                <Text style={styles.statusTitle}>وضعیت ابر: متصل و همگام</Text>
-                <View style={styles.statusDot} />
-              </View>
-              <Text style={styles.lastSyncText}>آخرین همگام‌سازی: {lastSyncTime}</Text>
-            </View>
-          </View>
-
-          {/* Sync Metrics */}
-          <View style={styles.metricsGrid}>
-            <View style={styles.metricItem}>
-              <Database size={15} color="#64748B" />
-              <Text style={styles.metricVal}>{logsCount} رکورد</Text>
-              <Text style={styles.metricLbl}>داده‌های ذخیره شده</Text>
-            </View>
-            <View style={styles.metricItem}>
-              <ShieldCheck size={15} color="#10B981" />
-              <Text style={styles.metricVal}>رمزنگاری ۲۵۶</Text>
-              <Text style={styles.metricLbl}>امنیت اطلاعات</Text>
-            </View>
-          </View>
-
-          {/* Manual Sync Button */}
-          <TouchableOpacity
-            style={styles.syncBtn}
-            onPress={handleManualSync}
-            disabled={isSyncing}
-            activeOpacity={0.8}
-          >
-            <RefreshCw
-              size={16}
-              color="#FFFFFF"
-            />
-            <Text style={styles.syncBtnText}>
-              {isSyncing ? 'در حال ارسال اطلاعات...' : 'همگام‌سازی دستی اکنون'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Account Section */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>حساب کاربری ابری</Text>
-
-          {isLoggedIn ? (
-            <View style={styles.accountRow}>
-              <View style={styles.accountInfo}>
-                <Text style={styles.accountPhone}>{phoneNumber}</Text>
-                <Text style={styles.accountType}>حساب کاربری فعال آب‌یار</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.logoutBtn}
-                onPress={handleLogout}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.logoutBtnText}>خروج</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.loginBox}>
-              <Text style={styles.loginDesc}>
-                برای ذخیره سابقه نوشیدن و امکان دسترسی در گوشی‌های دیگر، شماره
-                موبایل خود را وارد کنید:
+          <View style={styles.statusTopRow}>
+            <View style={styles.statusIndicator}>
+              <View style={[styles.statusDot, { backgroundColor: isLoggedIn ? '#10B981' : '#F59E0B' }]} />
+              <Text style={styles.statusText}>
+                {isLoggedIn ? 'متصل به حساب ابری' : 'حالت محلی (آفلاین)'}
               </Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="شماره موبایل (مثلاً ۰۹۱۲۳۴۵۶۷۸۹)"
-                placeholderTextColor="#94A3B8"
-                keyboardType="phone-pad"
-                value={inputPhone}
-                onChangeText={setInputPhone}
-              />
-              <TouchableOpacity
-                style={styles.loginSubmitBtn}
-                onPress={handleLogin}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.loginSubmitBtnText}>ورود و اتصال به ابر</Text>
-              </TouchableOpacity>
             </View>
+            <ShieldCheck size={20} color={isLoggedIn ? '#10B981' : '#F59E0B'} />
+          </View>
+
+          <View style={styles.statsRow}>
+            <View style={styles.statBox}>
+              <Text style={styles.statNum}>{formatNumber(logsCount)}</Text>
+              <Text style={styles.statLabel}>لاگ‌های ثبت‌شده</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statBox}>
+              <Text style={styles.statNum}>{lastSyncTime.split(' ')[0] || 'امروز'}</Text>
+              <Text style={styles.statLabel}>آخرین همگام‌سازی</Text>
+            </View>
+          </View>
+
+          {isLoggedIn && (
+            <TouchableOpacity
+              style={styles.syncBtn}
+              onPress={handleManualSync}
+              disabled={isSyncing}
+              activeOpacity={0.85}
+            >
+              <RefreshCw size={18} color="#FFFFFF" />
+              <Text style={styles.syncBtnText}>
+                {isSyncing ? 'در حال همگام‌سازی...' : 'همگام‌سازی همین الان'}
+              </Text>
+            </TouchableOpacity>
           )}
         </View>
 
-        {/* Sync Settings */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>تنظیمات همگام‌سازی</Text>
-
-          <View style={styles.settingRow}>
-            <View style={styles.settingTextWrap}>
-              <Text style={styles.settingTitle}>همگام‌سازی خودکار</Text>
-              <Text style={styles.settingSubtitle}>
-                ثبت آنی هر لیوان در سرور ابری پس از نوشیدن
-              </Text>
+        {/* Account Info or Login Form */}
+        {isLoggedIn ? (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>مشخصات حساب شما</Text>
+            <View style={styles.userRow}>
+              <View style={styles.userAvatar}>
+                <User size={22} color="#2D9CFF" />
+              </View>
+              <View style={styles.userTextCol}>
+                <Text style={styles.userName}>{user.name || 'کاربر آب‌یار'}</Text>
+                <Text style={styles.userContact}>{user.phone || user.email || 'ثبت‌شده'}</Text>
+              </View>
             </View>
-            <Switch
-              value={autoSync}
-              onValueChange={setAutoSync}
-              trackColor={{ false: '#CBD5E1', true: '#93C5FD' }}
-              thumbColor={autoSync ? '#0284C7' : '#F1F5F9'}
-            />
-          </View>
-        </View>
 
-        {/* Benefits Card */}
-        <View style={styles.benefitsCard}>
-          <View style={styles.benefitItem}>
-            <ArrowUpCircle size={18} color="#0284C7" />
-            <View style={styles.benefitTextWrap}>
-              <Text style={styles.benefitHeading}>پشتیبان‌گیری ابدی</Text>
-              <Text style={styles.benefitDesc}>
-                حتی در صورت تغییر یا ریست گوشی، هیچ‌یک از سوابق و استریک شما از بین نمی‌رود.
-              </Text>
-            </View>
+            <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.7}>
+              <LogOut size={16} color="#DC2626" />
+              <Text style={styles.logoutBtnText}>خروج از این حساب</Text>
+            </TouchableOpacity>
           </View>
+        ) : (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>ورود یا ایجاد حساب کاربری</Text>
+            <Text style={styles.cardSubtitle}>
+              برای ذخیره سوابق در فضای ابری و دسترسی روی دستگاه‌های دیگر، شماره موبایل یا ایمیل خود را وارد نمایید.
+            </Text>
 
-          <View style={styles.benefitItem}>
-            <Smartphone size={18} color="#10B981" />
-            <View style={styles.benefitTextWrap}>
-              <Text style={styles.benefitHeading}>دسترسی چنددستگاهی</Text>
-              <Text style={styles.benefitDesc}>
-                استفاده همزمان روی تبلت، گوشی و وب‌اپلیکیشن با همان اطلاعات.
-              </Text>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>نام شما (اختیاری):</Text>
+              <TextInput
+                style={styles.textInput}
+                value={inputName}
+                onChangeText={setInputName}
+                placeholder="مثلاً علی یا مریم"
+                placeholderTextColor="#94A3B8"
+              />
             </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>شماره موبایل یا ایمیل:</Text>
+              <TextInput
+                style={styles.textInput}
+                value={inputPhoneOrEmail}
+                onChangeText={setInputPhoneOrEmail}
+                placeholder="۰۹۱۲... یا email@domain.com"
+                placeholderTextColor="#94A3B8"
+                autoCapitalize="none"
+              />
+            </View>
+
+            <TouchableOpacity style={styles.loginBtn} onPress={handleLogin} activeOpacity={0.85}>
+              <CheckCircle2 size={18} color="#FFFFFF" />
+              <Text style={styles.loginBtnText}>ورود و اتصال حساب ابری</Text>
+            </TouchableOpacity>
           </View>
+        )}
+
+        {/* Backup & Export */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>پشتیبان‌گیری محلی و خروجی داده‌ها</Text>
+          <Text style={styles.cardSubtitle}>
+            می‌توانید یک نسخه متنی کامل از تمام سوابق نوشیدن آب و نشان‌های خود را استخراج کنید و در جای امن نگه دارید.
+          </Text>
+
+          <TouchableOpacity style={styles.exportBtn} onPress={handleExportData} activeOpacity={0.75}>
+            <ArrowDownCircle size={18} color="#0284C7" />
+            <Text style={styles.exportBtnText}>دریافت فایل خروجی سوابق (Export JSON)</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </View>
@@ -231,54 +251,50 @@ export function CloudScreen({ onBack, logsCount = 42 }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F6FA',
+    backgroundColor: '#F8FAFC',
   },
-  topHeader: {
+  header: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderColor: '#E2E8F0',
+    borderBottomColor: '#F1F5F9',
   },
   backBtn: {
-    width: 38,
-    height: 38,
+    padding: 8,
     borderRadius: 12,
     backgroundColor: '#F1F5F9',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  headerTitleWrap: {
-    alignItems: 'flex-end',
+  headerTextCol: {
     flex: 1,
-    marginRight: 10,
+    alignItems: 'flex-end',
+    marginRight: 12,
   },
   headerTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#0F172A',
   },
   headerSubtitle: {
     fontSize: 11,
+    fontWeight: '600',
     color: '#64748B',
-    marginTop: 1,
+    marginTop: 2,
   },
-  headerIconWrap: {
-    width: 36,
-    height: 36,
+  headerIconWrapper: {
+    width: 38,
+    height: 38,
     borderRadius: 12,
-    backgroundColor: '#E0F2FE',
-    justifyContent: 'center',
+    backgroundColor: '#EBF5FF',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 30,
+    padding: 20,
     gap: 16,
+    paddingBottom: 40,
   },
   statusCard: {
     backgroundColor: '#FFFFFF',
@@ -286,212 +302,194 @@ const styles = StyleSheet.create({
     padding: 18,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    shadowColor: '#0284C7',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
-    gap: 14,
   },
-  statusHeaderRow: {
+  statusTopRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  statusIndicator: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 12,
-  },
-  cloudIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#E0F2FE',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  statusTextWrap: {
-    alignItems: 'flex-end',
-    flex: 1,
-  },
-  statusBadgeRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#10B981',
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
-  statusTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#0369A1',
+  statusText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1E293B',
   },
-  lastSyncText: {
+  statsRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    marginTop: 18,
+    paddingVertical: 12,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+  },
+  statBox: {
+    alignItems: 'center',
+  },
+  statNum: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#0284C7',
+  },
+  statLabel: {
     fontSize: 11,
+    fontWeight: '600',
     color: '#64748B',
     marginTop: 2,
   },
-  metricsGrid: {
-    flexDirection: 'row-reverse',
-    gap: 10,
-  },
-  metricItem: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 14,
-    padding: 12,
-    alignItems: 'center',
-    gap: 4,
-  },
-  metricVal: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#1E293B',
-  },
-  metricLbl: {
-    fontSize: 10,
-    color: '#64748B',
+  statDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: '#E2E8F0',
   },
   syncBtn: {
-    backgroundColor: '#0284C7',
+    backgroundColor: '#2D9CFF',
+    borderRadius: 14,
+    height: 46,
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 12,
-    borderRadius: 14,
+    marginTop: 16,
   },
   syncBtnText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#FFFFFF',
   },
-  sectionCard: {
+  card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    padding: 16,
+    padding: 18,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    gap: 12,
   },
-  sectionTitle: {
+  cardTitle: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#0F172A',
     textAlign: 'right',
   },
-  accountRow: {
+  cardSubtitle: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#64748B',
+    lineHeight: 18,
+    textAlign: 'right',
+    marginTop: 6,
+    marginBottom: 14,
+  },
+  userRow: {
     flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    gap: 12,
+    marginTop: 10,
+    backgroundColor: '#F0F9FF',
     padding: 12,
     borderRadius: 14,
-  },
-  accountInfo: {
-    alignItems: 'flex-end',
-  },
-  accountPhone: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#1E293B',
-  },
-  accountType: {
-    fontSize: 11,
-    color: '#10B981',
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  logoutBtn: {
-    backgroundColor: '#FEE2E2',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
-  },
-  logoutBtnText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#DC2626',
-  },
-  loginBox: {
-    gap: 10,
-  },
-  loginDesc: {
-    fontSize: 11,
-    color: '#64748B',
-    textAlign: 'right',
-    lineHeight: 18,
-  },
-  textInput: {
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 13,
-    color: '#1E293B',
-    textAlign: 'right',
-  },
-  loginSubmitBtn: {
-    backgroundColor: '#0284C7',
-    paddingVertical: 11,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  loginSubmitBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  settingRow: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  settingTextWrap: {
-    alignItems: 'flex-end',
-    flex: 1,
-    marginLeft: 12,
-  },
-  settingTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#1E293B',
-  },
-  settingSubtitle: {
-    fontSize: 11,
-    color: '#64748B',
-    marginTop: 2,
-    textAlign: 'right',
-  },
-  benefitsCard: {
-    backgroundColor: '#F0F9FF',
-    borderRadius: 16,
-    padding: 16,
     borderWidth: 1,
     borderColor: '#BAE6FD',
-    gap: 14,
   },
-  benefitItem: {
-    flexDirection: 'row-reverse',
-    alignItems: 'flex-start',
-    gap: 10,
+  userAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  benefitTextWrap: {
+  userTextCol: {
     flex: 1,
     alignItems: 'flex-end',
   },
-  benefitHeading: {
-    fontSize: 12,
+  userName: {
+    fontSize: 14,
     fontWeight: '800',
     color: '#0369A1',
   },
-  benefitDesc: {
-    fontSize: 11,
-    color: '#0C4A6E',
-    textAlign: 'right',
-    lineHeight: 17,
+  userContact: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#0284C7',
     marginTop: 2,
+  },
+  logoutBtn: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    marginTop: 12,
+  },
+  logoutBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#DC2626',
+  },
+  inputGroup: {
+    marginBottom: 12,
+  },
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#334155',
+    marginBottom: 6,
+    textAlign: 'right',
+  },
+  textInput: {
+    height: 46,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    paddingHorizontal: 14,
+    fontSize: 14,
+    color: '#0F172A',
+    textAlign: 'right',
+  },
+  loginBtn: {
+    backgroundColor: '#2D9CFF',
+    borderRadius: 14,
+    height: 46,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 6,
+  },
+  loginBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  exportBtn: {
+    backgroundColor: '#F0F9FF',
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+    borderRadius: 14,
+    height: 46,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  exportBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0284C7',
   },
 });

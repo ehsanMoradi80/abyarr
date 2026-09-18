@@ -646,6 +646,120 @@ app.get('/api/partner/shared', async (req, res) => {
   res.json(sharedResult);
 });
 
+// In-Memory & Real-time Live Partner Store
+interface LivePartnerState {
+  code: string;
+  name: string;
+  glasses: number;
+  goal: number;
+  lastDrink?: {
+    time: string;
+    amount: number;
+    beverage?: string;
+  };
+  lastNudge?: {
+    from: string;
+    message: string;
+    timestamp: string;
+  };
+  updatedAt: string;
+}
+
+const livePartnerStore = new Map<string, LivePartnerState>();
+const partnerPairings = new Map<string, string>(); // codeA <-> codeB
+
+// API: Real-time Live Update Partner Progress
+app.post('/api/partner/live-sync', (req, res) => {
+  const { code, name, glasses, goal, lastDrink, pairedCode } = req.body;
+  if (!code) return res.status(400).json({ error: 'Code is required' });
+
+  const cleanCode = String(code).trim().toUpperCase();
+  const state: LivePartnerState = {
+    code: cleanCode,
+    name: name || 'همراه سلامت',
+    glasses: Number(glasses) || 0,
+    goal: Number(goal) || 8,
+    lastDrink,
+    updatedAt: new Date().toISOString(),
+  };
+
+  const existing = livePartnerStore.get(cleanCode);
+  if (existing?.lastNudge) {
+    state.lastNudge = existing.lastNudge;
+  }
+
+  livePartnerStore.set(cleanCode, state);
+
+  if (pairedCode) {
+    const cleanPair = String(pairedCode).trim().toUpperCase();
+    partnerPairings.set(cleanCode, cleanPair);
+    partnerPairings.set(cleanPair, cleanCode);
+  }
+
+  res.json({ success: true, state });
+});
+
+// API: Real-time Live Poll Partner
+app.get('/api/partner/live-poll', (req, res) => {
+  const code = String(req.query.code || '').trim().toUpperCase();
+  const myCode = String(req.query.myCode || '').trim().toUpperCase();
+
+  if (!code) return res.status(400).json({ error: 'Code is required' });
+
+  // Get partner's live state
+  const partnerState = livePartnerStore.get(code);
+  const myState = myCode ? livePartnerStore.get(myCode) : null;
+
+  if (partnerState) {
+    res.json({
+      connected: true,
+      partnerName: partnerState.name,
+      partnerGlasses: partnerState.glasses,
+      partnerGoal: partnerState.goal,
+      partnerPercent: partnerState.goal > 0 ? Math.min(Math.round((partnerState.glasses / partnerState.goal) * 100), 100) : 0,
+      lastDrink: partnerState.lastDrink || null,
+      nudge: myState?.lastNudge || null,
+      updatedAt: partnerState.updatedAt,
+    });
+  } else {
+    // Return empty placeholder or pending
+    res.json({
+      connected: false,
+      message: 'همراه هنوز آنلاین نشده است یا کدی ثبت نکرده است.',
+    });
+  }
+});
+
+// API: Send Real-Time Nudge / Cheer
+app.post('/api/partner/send-nudge', (req, res) => {
+  const { targetCode, fromName, message } = req.body;
+  if (!targetCode) return res.status(400).json({ error: 'Target code is required' });
+
+  const cleanTarget = String(targetCode).trim().toUpperCase();
+  const targetState = livePartnerStore.get(cleanTarget);
+
+  const nudgeData = {
+    from: fromName || 'همراه شما',
+    message: message || 'یک لیوان آب خنک بنوش! 💧',
+    timestamp: new Date().toISOString(),
+  };
+
+  if (targetState) {
+    targetState.lastNudge = nudgeData;
+  } else {
+    livePartnerStore.set(cleanTarget, {
+      code: cleanTarget,
+      name: 'همراه',
+      glasses: 0,
+      goal: 8,
+      lastNudge: nudgeData,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  res.json({ success: true, nudge: nudgeData });
+});
+
 // Vite Middleware for development / static files for production
 async function start() {
   if (process.env.NODE_ENV !== 'production') {

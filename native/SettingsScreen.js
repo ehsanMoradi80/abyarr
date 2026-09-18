@@ -9,7 +9,7 @@ import {
   Switch,
   Alert,
 } from 'react-native';
-import { Settings, Check, RotateCcw, Save, Compass, Sparkles, Zap, Layers } from 'lucide-react-native';
+import { Settings, Check, RotateCcw, Save, Compass, Sparkles, Zap, Layers, Download } from 'lucide-react-native';
 import { AppLogo } from './AppLogo';
 import { formatNumber, formatGlasses } from './strings';
 
@@ -27,6 +27,7 @@ export function SettingsScreen({
   onShowOnboarding,
   onShowTour,
   onShowThirdParty,
+  onShowDownload,
 }) {
   const [userName, setUserName] = useState(name);
   const [selectedGoal, setSelectedGoal] = useState(goalGlasses);
@@ -197,6 +198,19 @@ export function SettingsScreen({
             >
               <Zap size={16} color="#0D9488" />
               <Text style={styles.uxButtonText}>اتصالات Third-Party</Text>
+            </TouchableOpacity>
+          )}
+
+          {onShowDownload && (
+            <TouchableOpacity
+              style={[styles.uxButton, { borderColor: '#BAE6FD', backgroundColor: '#F0F9FF' }]}
+              onPress={onShowDownload}
+              activeOpacity={0.7}
+            >
+              <Download size={16} color="#0284C7" />
+              <Text style={[styles.uxButtonText, { color: '#0284C7', fontWeight: '800' }]}>
+                دانلود و نصب اپلیکیشن
+              </Text>
             </TouchableOpacity>
           )}
         </View>

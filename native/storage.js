@@ -1,26 +1,74 @@
-// Local offline persistence using expo-file-system or in-memory cache
+// Robust multi-tier persistence using AsyncStorage, localStorage, and FileSystem
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getTodayKey } from './strings';
 
+const STORAGE_KEY = 'abyar_water_data_v2';
 const STORAGE_FILE_NAME = 'abyar_water_data.json';
 
 const DEFAULT_STATE = {
   name: 'دوست خوبم',
   goalGlasses: 8, // 2000 ml
   defaultCupMl: 250,
-  logs: [], // Array of { id, amountGlasses, amountMl, loggedAt, note }
+  logs: [], // Array of { id, amountGlasses, amountMl, loggedAt, note, beverage }
   streakDays: 1,
   lastDrinkDate: null,
   reminderEnabled: true,
   reminderIntervalMinutes: 60,
   hasCelebratedToday: false,
+  hasCompletedOnboarding: false,
+  hasSeenTour: false,
+  partner: null,
+  integrations: {},
 };
 
 let cachedState = { ...DEFAULT_STATE };
 let isInitialized = false;
 
+// Synchronous initial hydration from localStorage if available (fast first render)
+try {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      cachedState = { ...DEFAULT_STATE, ...parsed };
+    }
+  }
+} catch (e) {
+  // Silent catch
+}
+
 export async function loadAppData() {
   if (isInitialized) return cachedState;
 
+  // 1. Try AsyncStorage (primary on native React Native & Android)
+  try {
+    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      cachedState = { ...DEFAULT_STATE, ...parsed };
+      isInitialized = true;
+      return cachedState;
+    }
+  } catch (err) {
+    // Continue to next tier
+  }
+
+  // 2. Try window.localStorage (web/preview environment)
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        cachedState = { ...DEFAULT_STATE, ...parsed };
+        isInitialized = true;
+        return cachedState;
+      }
+    }
+  } catch (err) {
+    // Continue to next tier
+  }
+
+  // 3. Try Expo FileSystem if available
   try {
     const FileSystem = await import('expo-file-system');
     if (FileSystem && FileSystem.documentDirectory) {
@@ -33,7 +81,7 @@ export async function loadAppData() {
       }
     }
   } catch (err) {
-    console.warn('Could not read persistent storage, using cached state:', err);
+    // Ignored
   }
 
   isInitialized = true;
@@ -43,6 +91,23 @@ export async function loadAppData() {
 export async function saveAppData(newState) {
   cachedState = { ...cachedState, ...newState };
 
+  // 1. Save to AsyncStorage
+  try {
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(cachedState));
+  } catch (err) {
+    // Ignored
+  }
+
+  // 2. Save to localStorage
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cachedState));
+    }
+  } catch (err) {
+    // Ignored
+  }
+
+  // 3. Save to Expo FileSystem if available
   try {
     const FileSystem = await import('expo-file-system');
     if (FileSystem && FileSystem.documentDirectory) {
@@ -50,7 +115,7 @@ export async function saveAppData(newState) {
       await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(cachedState));
     }
   } catch (err) {
-    console.warn('Could not write persistent storage:', err);
+    // Ignored
   }
 
   return cachedState;
