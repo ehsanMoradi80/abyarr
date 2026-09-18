@@ -58,30 +58,33 @@ export function DownloadModal({ visible, onClose, inviteCode = '' }) {
     setTimeout(() => setDownloadStarted(false), 3000);
 
     // If web browser/PWA environment, trigger install prompt or download
-    if (typeof window !== 'undefined') {
-      if ((window as any).deferredPWA кого) {
-        // prompt PWA install
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      if (window.deferredPWA && typeof window.deferredPWA.prompt === 'function') {
+        window.deferredPWA.prompt();
       }
-      // Create a downloadable backup / manifest link
-      const blob = new Blob([
-        JSON.stringify(
-          {
-            name: 'آب‌یار (Abyar)',
-            version: '1.0.0',
-            type: 'Android APK / PWA Package',
-            buildDate: new Date().toISOString(),
-            inviteCode,
-            status: 'Production Ready',
-          },
-          null,
-          2
-        ),
-      ], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'abyar-android-info.json';
-      a.click();
+      try {
+        const blob = new Blob([
+          JSON.stringify(
+            {
+              name: 'آب‌یار (Abyar)',
+              version: '1.0.0',
+              type: 'Android APK / PWA Package',
+              buildDate: new Date().toISOString(),
+              inviteCode,
+              status: 'Production Ready',
+            },
+            null,
+            2
+          ),
+        ], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'abyar-android-info.json';
+        a.click();
+      } catch (e) {
+        // Fallback for native runtime
+      }
     }
 
     Alert.alert(
