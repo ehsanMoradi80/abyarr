@@ -26,10 +26,12 @@ import {
   UserPlus,
 } from 'lucide-react-native';
 import { formatNumber } from './strings';
+import { copyTextToClipboard } from './clipboard';
 
 export function PartnerScreen({
   onBack,
   partnerData = null,
+  myInviteCode = '',
   onConnectPartner,
   onDisconnectPartner,
   onUpdateSharing,
@@ -44,15 +46,13 @@ export function PartnerScreen({
   const [incomingNudge, setIncomingNudge] = useState(null);
   const lastNudgeTimeRef = React.useRef('');
 
-  // Derive unique local invite code if not provided
-  const [myCode] = useState(() => {
-    return partnerData?.myCode || 'AB-' + Math.floor(1000 + Math.random() * 9000);
-  });
+  // Fixed, persistent invite code passed from persistent user state
+  const myCode = myInviteCode || partnerData?.myCode || 'AB-1000';
 
   const isConnected = !!(partnerData && partnerData.status === 'active');
   const partnerCode = partnerData?.code;
 
-  // Real-time live synchronization loop
+  // Real-time live synchronization and auto-discovery loop
   React.useEffect(() => {
     let isMounted = true;
 
@@ -71,16 +71,38 @@ export function PartnerScreen({
           }),
         });
 
-        // 2. If connected, poll partner's state
-        if (isConnected && partnerCode) {
-          const res = await fetch(`/api/partner/live-poll?code=${partnerCode}&myCode=${myCode}`);
-          if (res.ok) {
-            const data = await res.json();
-            if (isMounted && data.connected) {
+        // 2. Poll partner's state OR poll for incoming connection if not yet connected
+        const pollQuery = partnerCode
+          ? `code=${partnerCode}&myCode=${myCode}`
+          : `myCode=${myCode}`;
+
+        const res = await fetch(`/api/partner/live-poll?${pollQuery}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted) {
+            // Bi-directional connection discovery:
+            // When partner enters my code, I automatically become connected and see it in real-time!
+            if (!isConnected && data.connected && data.partnerCode) {
+              if (onConnectPartner) {
+                onConnectPartner(data.partnerCode, data.partnerName || 'همراه سلامت');
+              }
+              Alert.alert(
+                '🎉 همراه سلامت متصل شد!',
+                `${data.partnerName || 'همراه شما'} کد دعوت شما را وارد کرد و اکنون به یکدیگر متصل هستید!`
+              );
+            }
+
+            if (data.connected) {
               setLiveData(data);
               if (data.nudge && data.nudge.timestamp !== lastNudgeTimeRef.current) {
                 lastNudgeTimeRef.current = data.nudge.timestamp;
                 setIncomingNudge(data.nudge);
+                // Clear server nudge so it doesn't repeat
+                fetch('/api/partner/clear-nudge', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ myCode }),
+                }).catch(() => {});
                 setTimeout(() => {
                   if (isMounted) setIncomingNudge(null);
                 }, 6000);
@@ -102,7 +124,7 @@ export function PartnerScreen({
       isMounted = false;
       clearInterval(interval);
     };
-  }, [myCode, partnerCode, isConnected, userGlasses, userGoal, userName]);
+  }, [myCode, partnerCode, isConnected, userGlasses, userGoal, userName, onConnectPartner]);
 
   const partnerName = liveData?.partnerName || partnerData?.partnerName || 'همراه سلامت';
   const partnerGlasses = liveData?.partnerGlasses ?? partnerData?.progress?.totalGlasses ?? 0;
@@ -114,20 +136,20 @@ export function PartnerScreen({
   const [shareLastDrink, setShareLastDrink] = useState(partnerData?.shareLastDrink ?? true);
 
   const handleCopyCode = async () => {
-    try {
-      const appUrl = typeof window !== 'undefined' ? window.location.origin : 'https://abyar.app';
-      await Share.share({
-        message: `سلام! در برنامه آب‌یار منتظرتم. لینک دانلود و نصب برنامه:\n${appUrl}\nبا وارد کردن کد دعوت من (${myCode}) همراهم شو تا به صورت زنده حواسمون به آب خوردن هم باشه!`,
-        title: 'کد دعوت همراه آب‌یار',
-      });
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch (err) {
-      Alert.alert('کد دعوت', `کد دعوت شما: ${myCode}`);
+    const success = await copyTextToClipboard(myCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+    if (success) {
+      Alert.alert(
+        'کد کپی شد!',
+        `کد اختصاصی شما (${myCode}) در کلیپ‌بورد کپی شد. حالا می‌توانید آن را برای همراه سلامت خود ارسال کنید.`
+      );
+    } else {
+      Alert.alert('کد دعوت', `کد دعوت اختصاصی شما: ${myCode}`);
     }
   };
 
-  const handleConnect = () => {
+  const handleConnect = async () => {
     const clean = inputCode.trim().toUpperCase();
     if (!clean || clean.length < 4) {
       Alert.alert('کد نامعتبر', 'لطفاً کد دعوت معتبر همراه خود را وارد کنید (مثال: AB-1234)');
@@ -138,11 +160,36 @@ export function PartnerScreen({
       return;
     }
 
-    if (onConnectPartner) {
-      onConnectPartner(clean);
+    try {
+      const res = await fetch('/api/partner/quick-connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          myCode,
+          partnerCode: clean,
+          myName: userName,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (onConnectPartner) {
+          onConnectPartner(clean, data.partnerName || 'همراه سلامت');
+        }
+        setInputCode('');
+        Alert.alert('تبریک!', `شما با موفقیت به همراه سلامت متصل شدید و هر دو کاربر همگام شدند.`);
+      } else {
+        if (onConnectPartner) {
+          onConnectPartner(clean);
+        }
+        setInputCode('');
+        Alert.alert('متصل شدید', `ارتباط با همراه برقرار شد.`);
+      }
+    } catch (e) {
+      if (onConnectPartner) {
+        onConnectPartner(clean);
+      }
+      setInputCode('');
     }
-    setInputCode('');
-    Alert.alert('تبریک!', `شما با موفقیت به همراه سلامت متصل شدید و داده‌ها به صورت ریل‌تایم همگام شدند.`);
   };
 
   const handleNudge = async () => {
@@ -180,7 +227,14 @@ export function PartnerScreen({
         {
           text: 'قطع ارتباط',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
+            try {
+              await fetch('/api/partner/quick-disconnect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ myCode }),
+              });
+            } catch (e) {}
             if (onDisconnectPartner) {
               onDisconnectPartner();
             }

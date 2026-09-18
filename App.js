@@ -73,7 +73,7 @@ export default function App() {
   const statusBarHeight = StatusBar.currentHeight || (Platform.OS === 'android' ? 28 : 44);
   const topInset = Platform.OS === 'android' ? statusBarHeight : 44;
   const navBarDifference = Math.max(screenDimensions.height - windowDimensions.height, 0);
-  const bottomInset = Platform.OS === 'android' ? Math.max(navBarDifference + 8, 20) : 28;
+  const bottomInset = Platform.OS === 'android' ? Math.max(navBarDifference + 18, 30) : 34;
 
   // Initialize data and notifications on launch
   useEffect(() => {
@@ -84,6 +84,9 @@ export default function App() {
           setAppData(data);
           if (data.reminderEnabled) {
             scheduleWaterReminder(data.reminderIntervalMinutes || 60, data.name || '');
+          }
+          if (data.hasCompletedOnboarding && !data.hasSeenTour) {
+            setTimeout(() => setTourVisible(true), 800);
           }
         }
         await requestNotificationPermission();
@@ -140,7 +143,7 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          code: appData.partner?.myCode || 'AB-1000',
+          code: appData.myInviteCode || appData.partner?.myCode || 'AB-1000',
           name: appData.name || 'همراه شما',
           glasses: newDailyStats.totalGlasses,
           goal: appData.goalGlasses || 8,
@@ -173,13 +176,13 @@ export default function App() {
   };
 
   // Partner Handlers (Real storage & state, no demo)
-  const handleConnectPartner = async (code) => {
+  const handleConnectPartner = async (code, partnerName = 'همراه سلامت') => {
     const updated = {
       ...appData,
       partner: {
         code,
         status: 'active',
-        partnerName: 'همراه سلامت',
+        partnerName,
         connectedAt: new Date().toISOString(),
         shareProgress: true,
         shareLastDrink: true,
@@ -327,11 +330,15 @@ export default function App() {
               ...appData,
               ...onboardingData,
               hasCompletedOnboarding: true,
-              hasSeenTour: true,
+              hasSeenTour: false,
             };
             setAppData(updated);
             await saveAppData(updated);
             setShowOnboarding(false);
+            // Launch interactive tour immediately the first time user enters after onboarding
+            setTimeout(() => {
+              setTourVisible(true);
+            }, 400);
           }}
         />
       </View>
@@ -394,6 +401,7 @@ export default function App() {
         {activeTab === 'partner' && (
           <PartnerScreen
             partnerData={appData.partner}
+            myInviteCode={appData.myInviteCode}
             userGlasses={totalGlasses}
             userGoal={appData.goalGlasses || 8}
             userName={appData.name || 'دوست خوبم'}
@@ -601,7 +609,7 @@ export default function App() {
       <DownloadModal
         visible={downloadVisible}
         onClose={() => setDownloadVisible(false)}
-        inviteCode={appData.partner?.myCode || 'AB-1000'}
+        inviteCode={appData.myInviteCode || 'AB-1000'}
       />
 
       {/* Custom Amount Modal */}

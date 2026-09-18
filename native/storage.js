@@ -5,8 +5,14 @@ import { getTodayKey } from './strings';
 const STORAGE_KEY = 'abyar_water_data_v2';
 const STORAGE_FILE_NAME = 'abyar_water_data.json';
 
+export function generatePersistentInviteCode() {
+  const num = Math.floor(1000 + Math.random() * 9000);
+  return `AB-${num}`;
+}
+
 const DEFAULT_STATE = {
   name: 'دوست خوبم',
+  myInviteCode: null, // Generated once and persisted permanently
   goalGlasses: 8, // 2000 ml
   defaultCupMl: 250,
   logs: [], // Array of { id, amountGlasses, amountMl, loggedAt, note, beverage }
@@ -21,7 +27,14 @@ const DEFAULT_STATE = {
   integrations: {},
 };
 
-let cachedState = { ...DEFAULT_STATE };
+function ensureUserInviteCode(state) {
+  if (!state.myInviteCode) {
+    state.myInviteCode = state.partner?.myCode || generatePersistentInviteCode();
+  }
+  return state;
+}
+
+let cachedState = ensureUserInviteCode({ ...DEFAULT_STATE });
 let isInitialized = false;
 
 // Synchronous initial hydration from localStorage if available (fast first render)
@@ -30,7 +43,7 @@ try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      cachedState = { ...DEFAULT_STATE, ...parsed };
+      cachedState = ensureUserInviteCode({ ...DEFAULT_STATE, ...parsed });
     }
   }
 } catch (e) {
@@ -59,7 +72,7 @@ export async function loadAppData() {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        cachedState = { ...DEFAULT_STATE, ...parsed };
+        cachedState = ensureUserInviteCode({ ...DEFAULT_STATE, ...parsed });
         isInitialized = true;
         return cachedState;
       }
@@ -77,7 +90,7 @@ export async function loadAppData() {
       if (fileInfo.exists) {
         const jsonString = await FileSystem.readAsStringAsync(fileUri);
         const parsed = JSON.parse(jsonString);
-        cachedState = { ...DEFAULT_STATE, ...parsed };
+        cachedState = ensureUserInviteCode({ ...DEFAULT_STATE, ...parsed });
       }
     }
   } catch (err) {
@@ -85,11 +98,11 @@ export async function loadAppData() {
   }
 
   isInitialized = true;
-  return cachedState;
+  return ensureUserInviteCode(cachedState);
 }
 
 export async function saveAppData(newState) {
-  cachedState = { ...cachedState, ...newState };
+  cachedState = ensureUserInviteCode({ ...cachedState, ...newState });
 
   // 1. Save to AsyncStorage
   try {

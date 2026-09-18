@@ -286,7 +286,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingTop: 10,
+    paddingBottom: 28,
   },
   stepCard: {
     backgroundColor: '#FFFFFF',
@@ -489,7 +490,12 @@ const styles = StyleSheet.create({
   },
   bottomBar: {
     paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'android' ? 36 : 32,
     gap: 10,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
   },
   primaryBtn: {
     width: '100%',

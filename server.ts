@@ -18,6 +18,7 @@ interface UserData {
   id: string;
   phone: string;
   name: string | null;
+  email?: string;
   state?: any;
 }
 
@@ -256,10 +257,37 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ success: true });
 });
 
+// API: Health & Service Status
+app.get('/api/health', (_req, res) => {
+  res.json({
+    status: 'ok',
+    supabaseConnected: isSupabaseConfigured(),
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // API: Sync state
 app.post('/api/sync', async (req, res) => {
-  const user = await getUserFromReq(req);
-  const { state } = req.body;
+  let user = await getUserFromReq(req);
+  const { state, userId, name, phone, email } = req.body;
+
+  const effectiveId = user?.id || userId || state?.myInviteCode || 'user_' + Date.now();
+  if (!user) {
+    const existing = localUsers.get(effectiveId);
+    if (existing) {
+      user = existing;
+    } else {
+      const newUser: UserData = {
+        id: effectiveId,
+        phone: phone || '',
+        email: email || '',
+        name: name || state?.name || state?.profile?.name || 'کاربر آب‌یار',
+        state: state || {},
+      };
+      user = newUser;
+      localUsers.set(effectiveId, newUser);
+    }
+  }
 
   if (user && state) {
     user.state = state;
@@ -274,8 +302,8 @@ app.post('/api/sync', async (req, res) => {
         await supabase.from('profiles').upsert({
           id: user.id,
           phone: user.phone || '09000000000',
-          name: state.profile?.name || user.name,
-          daily_goal_glasses: state.profile?.dailyGoal || 8,
+          name: state.profile?.name || state?.name || user.name,
+          daily_goal_glasses: state.profile?.dailyGoal || state?.goalGlasses || 8,
           updated_at: new Date().toISOString(),
         }, { onConflict: 'id' });
 
@@ -286,7 +314,7 @@ app.post('/api/sync', async (req, res) => {
             enabled: state.reminder.enabled ?? true,
             start_time: state.reminder.startTime || '09:00',
             end_time: state.reminder.endTime || '23:00',
-            interval_minutes: state.reminder.intervalMinutes || 90,
+            interval_minutes: state.reminder.intervalMinutes || 60,
             quiet_hours_enabled: state.reminder.quietHoursEnabled ?? true,
             quiet_hours_start: state.reminder.quietHoursStart || '23:30',
             quiet_hours_end: state.reminder.quietHoursEnd || '08:30',
@@ -298,7 +326,7 @@ app.post('/api/sync', async (req, res) => {
         if (Array.isArray(state.logs) && state.logs.length > 0) {
           const recentLogs = state.logs.slice(-50).map((l: any) => ({
             user_id: user.id,
-            amount_glasses: l.amount !== undefined ? l.amount : (l.amountMl ? l.amountMl / 250 : 1),
+            amount_glasses: l.amount !== undefined ? l.amount : (l.amountGlasses !== undefined ? l.amountGlasses : (l.amountMl ? l.amountMl / 250 : 1)),
             logged_at: l.timestamp || l.loggedAt || new Date().toISOString(),
           }));
           await supabase.from('water_logs').upsert(recentLogs);
@@ -309,7 +337,13 @@ app.post('/api/sync', async (req, res) => {
     }
   }
 
-  res.json({ success: true, state: user?.state || state });
+  res.json({
+    success: true,
+    syncedAt: new Date().toISOString(),
+    logsCount: state?.logs?.length || 0,
+    supabaseConnected: isSupabaseConfigured(),
+    state: user?.state || state,
+  });
 });
 
 // API: Partner Create Invite
@@ -692,27 +726,33 @@ app.post('/api/partner/live-sync', (req, res) => {
 
   if (pairedCode) {
     const cleanPair = String(pairedCode).trim().toUpperCase();
-    partnerPairings.set(cleanCode, cleanPair);
-    partnerPairings.set(cleanPair, cleanCode);
+    if (cleanPair && cleanPair !== cleanCode) {
+      partnerPairings.set(cleanCode, cleanPair);
+      partnerPairings.set(cleanPair, cleanCode);
+    }
   }
 
   res.json({ success: true, state });
 });
 
-// API: Real-time Live Poll Partner
+// API: Real-time Live Poll Partner (Supports two-way pairing discovery)
 app.get('/api/partner/live-poll', (req, res) => {
-  const code = String(req.query.code || '').trim().toUpperCase();
+  const reqCode = String(req.query.code || '').trim().toUpperCase();
   const myCode = String(req.query.myCode || '').trim().toUpperCase();
 
-  if (!code) return res.status(400).json({ error: 'Code is required' });
+  if (!reqCode && !myCode) {
+    return res.status(400).json({ error: 'Code or myCode is required' });
+  }
 
-  // Get partner's live state
-  const partnerState = livePartnerStore.get(code);
+  // Check if myCode is mapped to a paired partner
+  const pairedCode = (myCode ? partnerPairings.get(myCode) : '') || reqCode;
+  const partnerState = pairedCode ? livePartnerStore.get(pairedCode) : null;
   const myState = myCode ? livePartnerStore.get(myCode) : null;
 
-  if (partnerState) {
+  if (pairedCode && partnerState) {
     res.json({
       connected: true,
+      partnerCode: pairedCode,
       partnerName: partnerState.name,
       partnerGlasses: partnerState.glasses,
       partnerGoal: partnerState.goal,
@@ -721,13 +761,90 @@ app.get('/api/partner/live-poll', (req, res) => {
       nudge: myState?.lastNudge || null,
       updatedAt: partnerState.updatedAt,
     });
+  } else if (pairedCode) {
+    res.json({
+      connected: true,
+      partnerCode: pairedCode,
+      partnerName: 'همراه شما',
+      partnerGlasses: 0,
+      partnerGoal: 8,
+      partnerPercent: 0,
+      lastDrink: null,
+      nudge: myState?.lastNudge || null,
+      updatedAt: new Date().toISOString(),
+    });
   } else {
-    // Return empty placeholder or pending
     res.json({
       connected: false,
-      message: 'همراه هنوز آنلاین نشده است یا کدی ثبت نکرده است.',
+      partnerCode: null,
+      nudge: myState?.lastNudge || null,
+      message: 'همراه هنوز کدی وارد نکرده یا متصل نشده است.',
     });
   }
+});
+
+// API: Direct Connect Two Devices by Code
+app.post('/api/partner/quick-connect', (req, res) => {
+  const { myCode, partnerCode, myName } = req.body;
+  const cleanMy = String(myCode || '').trim().toUpperCase();
+  const cleanPartner = String(partnerCode || '').trim().toUpperCase();
+
+  if (!cleanMy || !cleanPartner) {
+    return res.status(400).json({ error: 'Both myCode and partnerCode are required' });
+  }
+
+  if (cleanMy === cleanPartner) {
+    return res.status(400).json({ error: 'نمی‌توانید کد خودتان را وارد کنید' });
+  }
+
+  partnerPairings.set(cleanMy, cleanPartner);
+  partnerPairings.set(cleanPartner, cleanMy);
+
+  // If partner state is not yet in store, register basic entry
+  if (!livePartnerStore.has(cleanPartner)) {
+    livePartnerStore.set(cleanPartner, {
+      code: cleanPartner,
+      name: 'همراه سلامت',
+      glasses: 0,
+      goal: 8,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  const partnerState = livePartnerStore.get(cleanPartner);
+
+  res.json({
+    success: true,
+    partnerCode: cleanPartner,
+    partnerName: partnerState?.name || 'همراه سلامت',
+    partnerGlasses: partnerState?.glasses || 0,
+    partnerGoal: partnerState?.goal || 8,
+  });
+});
+
+// API: Disconnect Partner
+app.post('/api/partner/quick-disconnect', (req, res) => {
+  const { myCode } = req.body;
+  const cleanMy = String(myCode || '').trim().toUpperCase();
+  if (cleanMy) {
+    const paired = partnerPairings.get(cleanMy);
+    if (paired) {
+      partnerPairings.delete(paired);
+    }
+    partnerPairings.delete(cleanMy);
+  }
+  res.json({ success: true });
+});
+
+// API: Clear Last Nudge (after reading)
+app.post('/api/partner/clear-nudge', (req, res) => {
+  const { myCode } = req.body;
+  const cleanMy = String(myCode || '').trim().toUpperCase();
+  const state = livePartnerStore.get(cleanMy);
+  if (state) {
+    state.lastNudge = undefined;
+  }
+  res.json({ success: true });
 });
 
 // API: Send Real-Time Nudge / Cheer

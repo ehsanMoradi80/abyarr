@@ -23,6 +23,7 @@ import {
   Check,
   Copy,
 } from 'lucide-react-native';
+import { copyTextToClipboard } from './clipboard';
 
 export function DownloadModal({ visible, onClose, inviteCode = '' }) {
   const [copiedLink, setCopiedLink] = useState(false);
@@ -44,13 +45,15 @@ export function DownloadModal({ visible, onClose, inviteCode = '' }) {
     }
   };
 
-  const handleCopyLink = () => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(shareMessage);
-    }
+  const handleCopyLink = async () => {
+    const success = await copyTextToClipboard(shareMessage);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
-    Alert.alert('کپی شد!', 'لینک دعوت و دانلود در کلیپ‌بورد کپی شد.');
+    if (success) {
+      Alert.alert('کپی شد!', 'لینک دعوت و دانلود در کلیپ‌بورد کپی شد.');
+    } else {
+      Alert.alert('کد دعوت', `کد همراه شما: ${inviteCode || 'AB-1000'}\nلینک برنامه: ${appDownloadUrl}`);
+    }
   };
 
   const handleTriggerDownload = () => {
