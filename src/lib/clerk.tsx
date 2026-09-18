@@ -125,7 +125,9 @@ export const ClerkProvider: React.FC<{
     return <RealClerkProvider publishableKey={publishableKey}>{children}</RealClerkProvider>;
   }
 
-  return <FallbackAuthProvider>{children}</FallbackAuthProvider>;
+  throw new Error(
+    'Clerk authentication is not configured. Set VITE_CLERK_PUBLISHABLE_KEY or EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY with a real Clerk publishable key (starting with pk_). Fake local fallback is disabled in production.'
+  );
 };
 
 export const SignedIn: React.FC<{ children: React.ReactNode }> = ({ children }) => {

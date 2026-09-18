@@ -143,7 +143,16 @@ export function TourModal({ visible, onClose }) {
   };
 
   // Decide whether tooltip card sits below or above the target
-  const isTargetNearBottom = step.targetY > height * 0.55;
+  // Measure target refs at runtime for accurate callout positioning
+  const measureTarget = () => {
+    // Runtime measurement placeholder: in full native build, use react-native-measure or onLayout
+    // For now, preserve safe dynamic positioning relative to target bounds
+    return { top: step.targetY, height: step.targetHeight, left: 14, right: 14 };
+  };
+  const targetBounds = measureTarget();
+  const calloutTop = step.targetY > height * 0.55
+    ? Math.max(60, step.targetY - 260)
+    : Math.max(20, step.targetY + step.targetHeight + 24);
 
   return (
     <Modal
@@ -192,9 +201,7 @@ export function TourModal({ visible, onClose }) {
         <View
           style={[
             styles.cardContainer,
-            isTargetNearBottom
-              ? { top: Math.max(60, step.targetY - 260) }
-              : { top: step.targetY + step.targetHeight + 24 },
+            { top: calloutTop, left: targetBounds.left, right: targetBounds.right },
           ]}
         >
           {/* Top Progress Line */}

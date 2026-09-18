@@ -7,7 +7,7 @@
     "icon": "./public/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./public/icon.png",
+      "image": "./assets/splash.png",
       "backgroundColor": "#EBF5FF",
       "resizeMode": "contain"
     },
@@ -17,8 +17,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./public/icon.png",
-        "backgroundColor": "#2D9CFF"
+        "foregroundImage": "./assets/adaptive-icon-foreground.png",
+        "backgroundImage": "./assets/adaptive-icon-background.png"
       },
       "package": "com.abyar.water",
       "permissions": [
@@ -59,9 +59,9 @@
       [
         "expo-notifications",
         {
-          "icon": "./public/icon.png",
-          "color": "#168C9B",
-          "sounds": []
+          "icon": "./assets/notification-icon.png",
+          "color": "#2D9CFF",
+          "sounds": ["./assets/sounds/reminder.wav"]
         }
       ]
     ],

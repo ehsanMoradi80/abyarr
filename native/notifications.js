@@ -115,7 +115,7 @@ export async function sendImmediateNotification(title, body) {
         content: {
           title,
           body,
-          sound: true,
+          sound: 'reminder.wav',
           priority: Notifications.AndroidNotificationPriority?.HIGH || 'high',
         },
         trigger: null, // immediate
@@ -164,7 +164,7 @@ export async function scheduleWaterReminder(intervalMinutes = 60, userName = '')
         content: {
           title,
           body,
-          sound: true,
+          sound: 'reminder.wav',
           priority: Notifications.AndroidNotificationPriority?.HIGH || 'high',
         },
         trigger: {

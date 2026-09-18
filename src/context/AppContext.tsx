@@ -806,9 +806,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const syncNow = async () => {
     setIsSyncing(true);
     try {
+      const clerkUserObj = (window as any)?.Clerk?.user || null;
+      let bearerToken: string | null = null;
+      if (clerkUserObj && typeof clerkUserObj.getToken === 'function') {
+        bearerToken = await clerkUserObj.getToken();
+      }
       const res = await fetch('/api/sync', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(bearerToken ? { Authorization: `Bearer ${bearerToken}` } : {}),
+        },
         body: JSON.stringify({
           clientUpdatedAt: new Date().toISOString(),
           state: {
@@ -853,9 +861,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const triggerSync = async (customLogs?: WaterLog[]) => {
     try {
+      const clerkUserObj = (window as any)?.Clerk?.user || null;
+      let bearerToken: string | null = null;
+      if (clerkUserObj && typeof clerkUserObj.getToken === 'function') {
+        bearerToken = await clerkUserObj.getToken();
+      }
       await fetch('/api/sync', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(bearerToken ? { Authorization: `Bearer ${bearerToken}` } : {}),
+        },
         body: JSON.stringify({
           clientUpdatedAt: new Date().toISOString(),
           state: {

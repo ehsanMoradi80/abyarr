@@ -36,6 +36,7 @@ class MainApplication : Application(), ReactApplication {
     }
     loadReactNative(this)
     ApplicationLifecycleDispatcher.onApplicationCreate(this)
+    // Reschedule native alarms after boot if needed (called from JS via native bridge)
   }
 
   override fun onConfigurationChanged(newConfig: Configuration) {

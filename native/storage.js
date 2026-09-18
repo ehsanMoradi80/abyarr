@@ -2,6 +2,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getTodayKey } from './strings';
 
+function userStorageKey(userId: string | null) {
+  const base = userId ? `abyar_water_data_v2_${userId}` : 'abyar_water_data_v2';
+  return base;
+}
+function userFileName(userId: string | null) {
+  return userId ? `abyar_water_data_${userId}.json` : 'abyar_water_data.json';
+}
+
 const STORAGE_KEY = 'abyar_water_data_v2';
 const STORAGE_FILE_NAME = 'abyar_water_data.json';
 
