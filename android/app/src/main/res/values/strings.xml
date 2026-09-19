@@ -1,3 +1,5 @@
 <resources>
   <string name="app_name">Noosh</string>
+  <string name="widget_water_desc">ویجت ثبت سریع آب نوش</string>
+  <string name="widget_streak_desc">ویجت زنجیره روزهای متوالی نوشیدن آب</string>
 </resources>

@@ -31,5 +31,55 @@
         <data android:scheme="exp+ehsan-moradi"/>
       </intent-filter>
     </activity>
+
+    <!-- Water 4x1 AppWidget Receiver -->
+    <receiver
+        android:name=".WaterWidgetProvider"
+        android:label="ثبت آب آب‌یار"
+        android:exported="true">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.abyar.water.ACTION_QUICK_ADD_WATER"/>
+        <action android:name="com.abyar.water.ACTION_UPDATE_WIDGET"/>
+      </intent-filter>
+      <meta-data
+          android:name="android.appwidget.provider"
+          android:resource="@xml/water_widget_info"/>
+    </receiver>
+
+    <!-- Streak 2x2 AppWidget Receiver -->
+    <receiver
+        android:name=".StreakWidgetProvider"
+        android:label="زنجیره آب‌یار"
+        android:exported="true">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+      </intent-filter>
+      <meta-data
+          android:name="android.appwidget.provider"
+          android:resource="@xml/streak_widget_info"/>
+    </receiver>
+
+    <!-- Background Guaranteed Alarm Receiver -->
+    <receiver
+        android:name=".AlarmReceiver"
+        android:exported="false">
+      <intent-filter>
+        <action android:name="com.abyar.water.ACTION_WATER_ALARM"/>
+      </intent-filter>
+    </receiver>
+
+    <!-- Boot Completed Alarm Reschedule Receiver -->
+    <receiver
+        android:name=".BootReceiver"
+        android:exported="true"
+        android:enabled="true">
+      <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED"/>
+        <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED"/>
+        <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+        <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+      </intent-filter>
+    </receiver>
   </application>
 </manifest>

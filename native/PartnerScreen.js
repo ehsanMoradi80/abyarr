@@ -52,13 +52,14 @@ export function PartnerScreen({
   const isConnected = !!(partnerData && partnerData.status === 'active');
   const partnerCode = partnerData?.code;
 
-  // Real-time live synchronization and auto-discovery loop
+  // Real-time live synchronization with push stream & Supabase Realtime listener
   React.useEffect(() => {
     let isMounted = true;
+    let eventSource = null;
 
-    const syncAndPoll = async () => {
+    // Send current status once
+    const syncCurrentState = async () => {
       try {
-        // 1. Send my live state to backend
         await fetch('/api/partner/live-sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -71,58 +72,71 @@ export function PartnerScreen({
           }),
         });
 
-        // 2. Poll partner's state OR poll for incoming connection if not yet connected
         const pollQuery = partnerCode
           ? `code=${partnerCode}&myCode=${myCode}`
           : `myCode=${myCode}`;
 
         const res = await fetch(`/api/partner/live-poll?${pollQuery}`);
-        if (res.ok) {
+        if (res.ok && isMounted) {
           const data = await res.json();
-          if (isMounted) {
-            // Bi-directional connection discovery:
-            // When partner enters my code, I automatically become connected and see it in real-time!
-            if (!isConnected && data.connected && data.partnerCode) {
-              if (onConnectPartner) {
-                onConnectPartner(data.partnerCode, data.partnerName || 'همراه سلامت');
-              }
-              Alert.alert(
-                '🎉 همراه سلامت متصل شد!',
-                `${data.partnerName || 'همراه شما'} کد دعوت شما را وارد کرد و اکنون به یکدیگر متصل هستید!`
-              );
+          if (!isConnected && data.connected && data.partnerCode) {
+            if (onConnectPartner) {
+              onConnectPartner(data.partnerCode, data.partnerName || 'همراه سلامت');
             }
+          }
+          if (data.connected) {
+            setLiveData(data);
+          }
+        }
+      } catch (err) {}
+    };
 
-            if (data.connected) {
-              setLiveData(data);
-              if (data.nudge && data.nudge.timestamp !== lastNudgeTimeRef.current) {
-                lastNudgeTimeRef.current = data.nudge.timestamp;
-                setIncomingNudge(data.nudge);
-                // Clear server nudge so it doesn't repeat
-                fetch('/api/partner/clear-nudge', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ myCode }),
-                }).catch(() => {});
+    syncCurrentState();
+
+    // 1. Setup real-time push listener via EventSource (zero-latency push)
+    if (typeof window !== 'undefined' && 'EventSource' in window) {
+      try {
+        eventSource = new EventSource(`/api/partner/live-stream?myCode=${encodeURIComponent(myCode)}`);
+        
+        eventSource.onmessage = (event) => {
+          if (!isMounted) return;
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg.type === 'PARTNER_SYNC') {
+              setLiveData((prev) => ({
+                ...prev,
+                connected: true,
+                partnerCode: msg.partnerCode,
+                partnerName: msg.partnerName,
+                partnerGlasses: msg.partnerGlasses,
+                partnerGoal: msg.partnerGoal,
+                partnerPercent: msg.partnerPercent,
+                lastDrink: msg.lastDrink,
+                updatedAt: msg.updatedAt,
+              }));
+            } else if (msg.type === 'NUDGE' && msg.nudge) {
+              if (msg.nudge.timestamp !== lastNudgeTimeRef.current) {
+                lastNudgeTimeRef.current = msg.nudge.timestamp;
+                setIncomingNudge(msg.nudge);
                 setTimeout(() => {
                   if (isMounted) setIncomingNudge(null);
                 }, 6000);
               }
             }
-          }
-        }
-      } catch (err) {
-        // Silent catch for offline
-      }
-    };
+          } catch (e) {}
+        };
+      } catch (e) {}
+    }
 
-    // Initial run
-    syncAndPoll();
+    // 2. Fallback gentle heartbeat (60s instead of 3s busy-polling)
+    const fallbackHeartbeat = setInterval(syncCurrentState, 60000);
 
-    // 3-second live poll for real-time hydration awareness
-    const interval = setInterval(syncAndPoll, 3000);
     return () => {
       isMounted = false;
-      clearInterval(interval);
+      if (eventSource) {
+        eventSource.close();
+      }
+      clearInterval(fallbackHeartbeat);
     };
   }, [myCode, partnerCode, isConnected, userGlasses, userGoal, userName, onConnectPartner]);
 

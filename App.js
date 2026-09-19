@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -7,6 +7,7 @@ import {
   Platform,
   TouchableOpacity,
   Dimensions,
+  BackHandler,
 } from 'react-native';
 import { Home, Calendar, BarChart3, Settings, Plus, Trophy } from 'lucide-react-native';
 
@@ -40,9 +41,34 @@ import {
   cancelAllReminders,
 } from './native/notifications';
 import { getTodayKey } from './native/strings';
+import { nativeOutbox } from './native/outbox';
+import { NativeBridgeService } from './src/services/nativeBridge';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('home'); // 'home' | 'history' | 'rewards' | 'stats' | 'settings' | 'partner' | 'cloud' | 'widgets' | 'third-party'
+  // Stack-based native navigation
+  const [navStack, setNavStack] = useState([{ name: 'home', params: {} }]);
+  const currentRoute = navStack[navStack.length - 1] || { name: 'home', params: {} };
+  const activeTab = currentRoute.name;
+
+  const push = useCallback((name, params = {}) => {
+    setNavStack((prev) => [...prev, { name, params }]);
+  }, []);
+
+  const pop = useCallback(() => {
+    setNavStack((prev) => (prev.length > 1 ? prev.slice(0, prev.length - 1) : prev));
+  }, []);
+
+  const navigate = useCallback((name, params = {}) => {
+    const rootTabs = ['home', 'history', 'stats', 'settings'];
+    if (rootTabs.includes(name)) {
+      setNavStack([{ name, params }]);
+    } else {
+      setNavStack((prev) => [...prev, { name, params }]);
+    }
+  }, []);
+
+  const canGoBack = navStack.length > 1;
+
   const [appData, setAppData] = useState({
     name: 'دوست خوبم',
     goalGlasses: 8,
@@ -99,6 +125,27 @@ export default function App() {
     init();
   }, []);
 
+  // Hardware Back Button integration for Android navigation stack
+  useEffect(() => {
+    const onHardwareBackPress = () => {
+      if (tourVisible) { setTourVisible(false); return true; }
+      if (downloadVisible) { setDownloadVisible(false); return true; }
+      if (badgesVisible) { setBadgesVisible(false); return true; }
+      if (celebrationVisible) { setCelebrationVisible(false); return true; }
+      if (customAmountVisible) { setCustomAmountVisible(false); return true; }
+      if (quickHubVisible) { setQuickHubVisible(false); return true; }
+
+      if (canGoBack) {
+        pop();
+        return true;
+      }
+      return false;
+    };
+
+    const sub = BackHandler.addEventListener('hardwareBackPress', onHardwareBackPress);
+    return () => sub.remove();
+  }, [canGoBack, pop, tourVisible, downloadVisible, badgesVisible, celebrationVisible, customAmountVisible, quickHubVisible]);
+
   // Calculate daily stats from logs
   const { todayLogs, totalGlasses, totalMl } = calculateDailyStats(appData.logs || []);
 
@@ -137,7 +184,19 @@ export default function App() {
     setAppData(updatedState);
     await saveAppData(updatedState);
 
-    // Immediate Real-Time Live Sync to Partner & Cloud
+    // 1. Offline outbox queue
+    nativeOutbox.enqueue('ADD_LOG', newLog);
+
+    // 2. Immediate Native AppWidget update (Android RemoteViews & storage cache)
+    NativeBridgeService.updateWidgetData({
+      todayGlasses: newDailyStats.totalGlasses,
+      goalGlasses: appData.goalGlasses || 8,
+      streakDays: appData.streakDays || 1,
+      percent: Math.min(100, Math.round((newDailyStats.totalGlasses / (appData.goalGlasses || 8)) * 100)),
+      lastDrinkTime: new Date().toISOString(),
+    });
+
+    // 3. Immediate Real-Time Live Sync to Partner & Cloud
     try {
       fetch('/api/partner/live-sync', {
         method: 'POST',
@@ -164,6 +223,17 @@ export default function App() {
       scheduleWaterReminder(appData.reminderIntervalMinutes || 60, appData.name || '');
     }
   };
+
+  // Listen for background widget click events
+  useEffect(() => {
+    const handleWidgetDrink = () => {
+      handleAddWater(1, 250);
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('abyar_widget_add_drink', handleWidgetDrink);
+      return () => window.removeEventListener('abyar_widget_add_drink', handleWidgetDrink);
+    }
+  }, [appData]);
 
   // Update Goal
   const handleUpdateGoal = async (newGoal) => {
@@ -247,6 +317,18 @@ export default function App() {
     };
     setAppData(updatedState);
     await saveAppData(updatedState);
+
+    // Queue in offline outbox
+    nativeOutbox.enqueue('DELETE_LOG', { id: logId });
+
+    // Update widgets
+    const remainingStats = calculateDailyStats(updatedLogs);
+    NativeBridgeService.updateWidgetData({
+      todayGlasses: remainingStats.totalGlasses,
+      goalGlasses: appData.goalGlasses || 8,
+      streakDays: appData.streakDays || 1,
+      percent: Math.min(100, Math.round((remainingStats.totalGlasses / (appData.goalGlasses || 8)) * 100)),
+    });
   };
 
   // Reset today's logs
@@ -358,8 +440,8 @@ export default function App() {
         <Header
           title={`سلام، ${appData.name || 'دوست خوبم'}`}
           subtitle="نوشیدن آب، یادآوری عشق به خودت"
-          onOpenCloud={() => setActiveTab('cloud')}
-          onOpenSettings={() => setActiveTab('settings')}
+          onOpenCloud={() => push('cloud')}
+          onOpenSettings={() => navigate('settings')}
         />
       )}
 
@@ -377,11 +459,11 @@ export default function App() {
             onDeleteWater={handleDeleteWater}
             onOpenCustomAmount={() => setCustomAmountVisible(true)}
             onOpenQuickHub={() => setQuickHubVisible(true)}
-            onOpenRewards={() => setActiveTab('rewards')}
-            onOpenPartner={() => setActiveTab('partner')}
-            onOpenCloud={() => setActiveTab('cloud')}
-            onOpenWidgets={() => setActiveTab('widgets')}
-            onOpenThirdParty={() => setActiveTab('third-party')}
+            onOpenRewards={() => push('rewards')}
+            onOpenPartner={() => push('partner')}
+            onOpenCloud={() => push('cloud')}
+            onOpenWidgets={() => push('widgets')}
+            onOpenThirdParty={() => push('third-party')}
             onOpenTour={() => setTourVisible(true)}
             onOpenDownload={() => setDownloadVisible(true)}
           />
@@ -394,7 +476,7 @@ export default function App() {
             goalGlasses={appData.goalGlasses || 8}
             streakDays={appData.streakDays || 1}
             partnerConnected={appData.partner?.status === 'active'}
-            onBack={() => setActiveTab('home')}
+            onBack={pop}
           />
         )}
 
@@ -408,7 +490,7 @@ export default function App() {
             onConnectPartner={handleConnectPartner}
             onDisconnectPartner={handleDisconnectPartner}
             onUpdateSharing={handleUpdatePartnerSharing}
-            onBack={() => setActiveTab('home')}
+            onBack={pop}
           />
         )}
 
@@ -417,7 +499,7 @@ export default function App() {
             appData={appData}
             onUpdateUser={handleUpdateUser}
             onSyncNow={handleSyncNow}
-            onBack={() => setActiveTab('home')}
+            onBack={pop}
           />
         )}
 
@@ -426,7 +508,7 @@ export default function App() {
             todayGlasses={totalGlasses}
             goalGlasses={appData.goalGlasses || 8}
             streakDays={appData.streakDays || 1}
-            onBack={() => setActiveTab('home')}
+            onBack={pop}
             onQuickAdd={() => handleAddWater(1, 250)}
           />
         )}
@@ -439,7 +521,7 @@ export default function App() {
               setAppData(updated);
               await saveAppData(updated);
             }}
-            onBack={() => setActiveTab('home')}
+            onBack={pop}
           />
         )}
 
@@ -470,7 +552,7 @@ export default function App() {
             onShowSplash={() => setShowSplash(true)}
             onShowOnboarding={() => setShowOnboarding(true)}
             onShowTour={() => setTourVisible(true)}
-            onShowThirdParty={() => setActiveTab('third-party')}
+            onShowThirdParty={() => push('third-party')}
             onShowDownload={() => setDownloadVisible(true)}
           />
         )}
@@ -482,7 +564,7 @@ export default function App() {
           {/* Settings Tab */}
           <TouchableOpacity
             style={styles.navItem}
-            onPress={() => setActiveTab('settings')}
+            onPress={() => navigate('settings')}
             activeOpacity={0.7}
           >
             <Settings
@@ -503,7 +585,7 @@ export default function App() {
           {/* Rewards Tab (جوایز و ریواردز) */}
           <TouchableOpacity
             style={styles.navItem}
-            onPress={() => setActiveTab('rewards')}
+            onPress={() => navigate('rewards')}
             activeOpacity={0.7}
           >
             <Trophy
@@ -535,7 +617,7 @@ export default function App() {
           {/* History Tab */}
           <TouchableOpacity
             style={styles.navItem}
-            onPress={() => setActiveTab('history')}
+            onPress={() => navigate('history')}
             activeOpacity={0.7}
           >
             <Calendar
@@ -556,7 +638,7 @@ export default function App() {
           {/* Home Tab */}
           <TouchableOpacity
             style={styles.navItem}
-            onPress={() => setActiveTab('home')}
+            onPress={() => navigate('home')}
             activeOpacity={0.7}
           >
             <Home

@@ -71,7 +71,7 @@ export class ExpoWaterAlarmManager {
           channelId: 'water-alarm-channel',
           sound: true,
           priority: Notifications.AndroidNotificationPriority.MAX,
-          subtitle: 'Ø§Ø±Ø³Ø§Ù„ Ø¨Ù‡ ØµÙˆØ±Øª Ù‡Ø´Ø¯Ø§Ø± Ø³ÛŒØ³ØªÙ…ÛŒ',
+          subtitle: 'ارسال به صورت هشدار سیستمی',
           richContent: {
             image: NOOSH_MASCOT_STATES.miss_you.image,
           },

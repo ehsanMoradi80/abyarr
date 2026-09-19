@@ -715,6 +715,48 @@ interface LivePartnerState {
 
 const livePartnerStore = new Map<string, LivePartnerState>();
 const partnerPairings = new Map<string, string>(); // codeA <-> codeB
+const partnerStreams = new Map<string, Set<express.Response>>();
+
+function broadcastToPartnerStream(targetCode: string, payload: any) {
+  const clients = partnerStreams.get(targetCode);
+  if (clients && clients.size > 0) {
+    const dataString = `data: ${JSON.stringify(payload)}\n\n`;
+    for (const res of clients) {
+      try {
+        res.write(dataString);
+      } catch {}
+    }
+  }
+}
+
+// API: Server-Sent Events stream for instant real-time push sync & nudges
+app.get('/api/partner/live-stream', (req, res) => {
+  const myCode = String(req.query.myCode || '').trim().toUpperCase();
+  if (!myCode) {
+    return res.status(400).send('myCode is required');
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders?.();
+
+  if (!partnerStreams.has(myCode)) {
+    partnerStreams.set(myCode, new Set());
+  }
+  partnerStreams.get(myCode)!.add(res);
+
+  // Send initial connected ping
+  res.write(`data: ${JSON.stringify({ type: 'CONNECTED', myCode, timestamp: new Date().toISOString() })}\n\n`);
+
+  req.on('close', () => {
+    const set = partnerStreams.get(myCode);
+    if (set) {
+      set.delete(res);
+      if (set.size === 0) partnerStreams.delete(myCode);
+    }
+  });
+});
 
 // API: Real-time Live Update Partner Progress
 app.post('/api/partner/live-sync', (req, res) => {
@@ -743,6 +785,18 @@ app.post('/api/partner/live-sync', (req, res) => {
     if (cleanPair && cleanPair !== cleanCode) {
       partnerPairings.set(cleanCode, cleanPair);
       partnerPairings.set(cleanPair, cleanCode);
+
+      // Broadcast live sync push immediately to the paired partner!
+      broadcastToPartnerStream(cleanPair, {
+        type: 'PARTNER_SYNC',
+        partnerCode: cleanCode,
+        partnerName: state.name,
+        partnerGlasses: state.glasses,
+        partnerGoal: state.goal,
+        partnerPercent: state.goal > 0 ? Math.min(Math.round((state.glasses / state.goal) * 100), 100) : 0,
+        lastDrink: state.lastDrink,
+        updatedAt: state.updatedAt,
+      });
     }
   }
 
@@ -887,6 +941,9 @@ app.post('/api/partner/send-nudge', (req, res) => {
       updatedAt: new Date().toISOString(),
     });
   }
+
+  // Push instantly to real-time stream
+  broadcastToPartnerStream(cleanTarget, { type: 'NUDGE', nudge: nudgeData });
 
   res.json({ success: true, nudge: nudgeData });
 });
