@@ -31,7 +31,7 @@ class StreakWidgetProvider : AppWidgetProvider() {
                 PendingIntent.FLAG_UPDATE_CURRENT
             }
             val launchIntent = Intent(context, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             }
             val pendingIntent = PendingIntent.getActivity(context, 1003, launchIntent, flags)
             views.setOnClickPendingIntent(R.id.widget_streak_root, pendingIntent)

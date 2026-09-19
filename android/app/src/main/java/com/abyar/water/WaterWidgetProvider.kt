@@ -101,7 +101,7 @@ class WaterWidgetProvider : AppWidgetProvider() {
 
             // PendingIntent to launch MainActivity on tapping widget body
             val launchIntent = Intent(context, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             }
             val launchPendingIntent = PendingIntent.getActivity(context, 1002, launchIntent, flags)
             views.setOnClickPendingIntent(R.id.widget_root, launchPendingIntent)
